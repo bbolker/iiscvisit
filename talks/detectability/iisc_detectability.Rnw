@@ -1,0 +1,749 @@
+\documentclass[english]{beamer}
+\usepackage{amssymb,latexsym,amsmath,setspace}
+\usepackage[scaled]{helvet}
+\usepackage{pbox}
+\usepackage{tikz}
+\definecolor{links}{HTML}{2A1B81}
+\hypersetup{colorlinks,linkcolor=,urlcolor=links}
+\usepackage{natbib}
+\usepackage[T1]{fontenc}
+\usepackage[latin1]{inputenc}
+\usepackage{amsmath}
+%\usepackage{tabularx}
+%\usepackage{multicolumn}
+\usepackage{color}
+\usepackage{hyperref}
+\usepackage{amssymb}
+\usepackage{bm}
+\usepackage{graphicx}
+\newcommand{\colemph}[1]{{\color{red} \emph{#1}}}
+\newcommand{\code}[1]{{\tt #1}}
+\newcommand{\todo}[1]{{\color{red} \textbf{FIXME: #1}}}
+\newcommand{\fourier}[1]{\ensuremath{\tilde #1}}
+\renewcommand{\vec}[1]{\ensuremath{\mathbf #1}}
+\newcommand{\multinom}{{\cal M}}
+\newcommand{\llik}{{\cal L}}
+\newcommand{\Nbar}{\bar N}
+\newcommand{\ssize}{5.5in}
+% \newcommand{\sqfoilhead}[1]{\foilhead[-0.8in]{#1}}
+% \newcommand{\sqqfoilhead}[1]{\foilhead[-1.2in]{#1}}
+\usepackage[normalem]{ulem}
+\usepackage[buttonsize=1em]{animate}
+\setbeamertemplate{navigation symbols}{}
+
+% http://tex.stackexchange.com/questions/2072/beamer-navigation-circles-without-subsections
+\usepackage{remreset}% tiny package containing just the \@removefromreset command
+\makeatletter
+\@removefromreset{subsection}{section}
+% http://tex.stackexchange.com/questions/31483/miniframe-navigation-not-drawn-correctly?lq=1
+\beamer@compresstrue
+\makeatother
+\setcounter{subsection}{1}
+
+\bibliographystyle{shortreflist}
+
+\usetheme{Berlin}
+\setbeamercovered{transparent}
+
+\newcommand{\citepx}[1]{{\small \citep{#1}}}
+\newcommand{\citex}[1]{{\small \cite{#1}}}
+\usepackage[english]{babel}
+
+\begin{document}
+
+\makeatletter
+\def\newblock{\beamer@newblock}
+\makeatother 
+
+<<opts,echo=FALSE>>=
+library("knitr")
+opts_chunk$set(echo=FALSE,fig.align="center",
+  out.width="0.7\\textwidth",
+  fig.width=6,fig.height=5,
+  message=FALSE,warning=FALSE)
+@
+\title[Detectability]{Detectability in ecological systems:\\ two nonstandard examples}
+\author[Ben Bolker]{Ben~Bolker, McMaster University \\
+  {\tiny Departments of Mathematics \& Statistics and Biology}}
+\institute{Math Bio Research Seminar}
+\date{3 October 2014}
+% \pgfdeclareimage[height=0.5cm]{uflogo}{letterhdwm}
+% \logo{\pgfuseimage{uflogo}}
+\AtBeginSection[]{
+  \frame<beamer>{ 
+     \frametitle{Outline}   
+     \tableofcontents[currentsection] 
+   }
+ }
+
+\begin{frame}
+\titlepage
+\end{frame}
+% \beamerdefaultoverlayspecification{<+->}
+
+<<setup,message=FALSE>>=
+library(ggplot2)
+library(tikzDevice)
+library(grid)
+library(abind)
+library(reshape2)
+library(RColorBrewer)
+library(scales) ## for squish()
+library(grDevices) ## for adjustcolor
+zmargin <- theme(panel.margin=unit(0,"lines"))
+theme_set(theme_bw())
+if (require(knitr)) {
+  knit_hooks$set(
+                 basefig=function(before, options, envir) {
+                     if (before) {
+                         par(bty="l",las=1)
+                     } else { }
+                 })
+}
+@ 
+
+\begin{frame}
+\frametitle{Acknowledgements}
+
+\begin{description}
+  \item[Money]{NSF, NSERC}
+  \item[Computational resources]{SHARCnet}
+  \item[Data and discussions]{Aaron Berk, Alan Bolten, Karen Bjorndal, Leonid Bogachev, Ethan Bolker, Ira Gessel, Marm Kilpatrick}
+  \end{description}
+\end{frame}
+
+\section{Introduction}
+\setcounter{subsection}{1}
+
+\begin{frame}
+\frametitle{Outline}
+\tableofcontents{}
+\end{frame}
+
+\begin{frame}
+  \frametitle{Detectability in ecological problems}
+  \begin{columns}
+  \begin{column}{0.6\textwidth}
+  \begin{itemize}
+  \item{ecological sampling is imperfect; \\
+      individuals may vary in detectability
+      \begin{itemize}
+      \item sometimes it matters
+      \item sometimes it's unidentifiable
+      \end{itemize}}
+  \item sampling designs \\
+    (e.g. capture-mark-recapture)
+  \item statistical methods \\
+    (MLE, Bayesian MCMC)
+  \item relevance in other fields of math bio?
+  \end{itemize}
+\end{column}
+\begin{column}{0.4\textwidth}
+  \centering
+  \includegraphics[width=1.5in]{pix/royledorazio.png}
+\end{column}
+\end{columns}
+\end{frame}
+
+\begin{frame}
+  \frametitle{Introductory meta- stuff}
+     \begin{columns}
+   \begin{column}{0.4\textwidth}
+  % \begin{itemize}
+  % \item choosing problems: do what you want, then 
+  %   \href{http://en.wikipedia.org/wiki/Texas_sharpshooter_fallacy}{tell a story}
+  %\item 
+    Working on problems: \\ the ``Pacala method''
+%   \end{itemize}
+       \end{column}
+     \begin{column}{0.6\textwidth}
+     \centering
+     \begin{table}[c]
+     \includegraphics[width=1.7in]{pix/pacala1.png} \\
+     \pbox{20cm}{\includegraphics[width=2in]{pix/wheel.png} \\
+     {\tiny\url{http://weedactivist.com/2013/04/26/reinventing-the-wheel/}}}
+     \end{table}
+   \end{column}
+ \end{columns}
+\end{frame}
+
+\section{Mosquitoes/WNV}
+\setcounter{subsection}{1}
+
+\begin{frame}
+  \frametitle{The problem}
+
+
+
+  \begin{columns}
+    \begin{column}{0.45\textwidth}
+      \begin{itemize}
+      \item         American Robins / \\
+        mosquitoes  / \\
+        West Nile virus
+      \item genotyped blood meals \\ (one per mosquito)
+      \item what can we tell \\ about the robin population from these data? \\
+        size, heterogeneity?
+        \end{itemize}
+        \end{column}
+        \begin{column}{0.6\textwidth}
+          \centering
+          % http://tex.stackexchange.com/questions/2441/how-to-add-a-forced-line-break-inside-a-table-cell
+          \begin{tabular}[t]{p{.35\textwidth}p{.35\textwidth}}
+            \includegraphics[width=1in]{pix/robin.jpeg}  \newline
+            \tiny \emph{Turdus migratorius} \newline
+            \href{http://allaboutbirds.org}{allaboutbirds.org}
+            &
+            \includegraphics[width=1in]{pix/culexpipiens.jpeg}  \newline
+            \tiny \emph{Culex} spp. \newline
+            \href{http://alamel.free.fr}{alamel.free.fr} 
+            \\
+            \includegraphics[width=1in]{pix/200px-Em_wnvirus_j7908i2.jpg} 
+            \newline
+            \tiny WNV (Wikipedia) &
+            \includegraphics[width=1in]{pix/kilpatrick.jpeg}  \newline
+            \tiny Marm Kilpatrick
+          \end{tabular}
+        \end{column}
+      \end{columns}
+    \end{frame}
+
+\begin{frame}
+\frametitle{Mathematical framework}
+\begin{columns}
+  \begin{column}{0.6\textwidth}
+    \begin{itemize}
+    \item \emph{occupancy spectrum}: \\
+      $S=\{s_i\}$, $i = 0, \ldots, i_{\mbox{\small max}}$ = \\
+      \# of birds sampled by $i$ mosquitoes \\
+      $\sum s_i=B$, \qquad $\sum i s_i = M$
+    \item{$V$ is the (unordered) occupancy: \\
+      e.g. for $B=4$, $M=5$:
+      $$
+      V=\{\{0,1,1,3\}\} \leftrightarrow S=\{1,2,0,1\}
+      $$}
+      \pause
+    \item $s_0$ = ``missing mass''
+    \item (how) can we estimate $B$?
+    \end{itemize}
+  \end{column}
+  \begin{column}{0.4\textwidth}
+<<number_plot,fig.width=9,fig.height=9,out.width="\\textwidth">>=
+pt.cex=10
+pp <- brewer.pal(4,"Set1")
+plot(rep(0,4),1:4,col=pp,pch=15,
+     xlim=c(-1,5),
+     ylim=c(0.5,5),
+     cex=pt.cex,axes=FALSE,ann=FALSE)
+points(rep(3,5)+c(0,0,-0.5,0,0.5),c(2,3,4,4,4),
+       col=pp[c(2,3,4,4,4)],pch=16,cex=pt.cex)
+text(c(0,3),c(4.5,4.5),c("birds","mosquitoes"),cex=5)
+@
+\end{column}
+  \end{columns}
+\end{frame}
+
+\begin{frame}
+  \frametitle{Occupancy spectrum}
+  
+  \begin{itemize}
+    \item Maxwell-Boltzmann statistics
+    \item{define the multinomial coefficient
+$$
+\multinom(S) \equiv \frac{(\sum s_i)!}{\prod s_i!}.
+$$
+}
+    \item{then the likelihood of the occupancy spectrum is
+$$
+        P(S|B,M) =  \frac{1}{B^M} \multinom(S) \multinom(V)
+$$
+}
+  \item zeros are \emph{unobserved}; \\
+    use $s_0=B-K$ where $K$ (total birds \emph{observed}) $\equiv \sum_{i>0} s_i$
+  \end{itemize}
+\end{frame}
+
+\begin{frame}
+  \frametitle{Maximum likelihood estimation}
+  \begin{itemize}
+    \item{Log-likelihood as a function of $B$ is
+$$
+\llik = C -M \log B + \log B! - \log (B-K)!
+$$
+}
+\item we know $M$ (\# of mosquitoes) and $K$ (\# of birds represented)
+\item $\to$ $K$ is a \emph{sufficient statistic} for estimating $B$
+\item apply standard MLE machinery
+\end{itemize}
+\end{frame}
+
+
+\begin{frame}
+  \frametitle{Likelihood estimation}
+<<likplot1,basefig=TRUE,echo=FALSE,message=FALSE,dev="tikz">>=
+par(cex=1.5)
+source("mosqfuns2.R")
+M <- 20; K <- 16
+ff <- fitB(K,M)
+c1 <- curve(nllfun(log(x),K=K,M=M),from=K,to=150,log="x",
+      ylab="negative log-likelihood ($\\cal L$)",
+      xlab="Total number of birds ($B$)",lwd=2)
+points(c1$x[which.min(c1$y)],min(c1$y),pch=16,cex=1.5)
+axis(side=2)
+title(main="for $K=16$, $M=20$:")
+text(exp(ff$fit),20.5,paste0("$\\hat B=",round(exp(ff$fit)),"$"))
+text(exp(ff$fit),19.5,paste0("CI=\\{",round(exp(ff$confint[1])),",",
+                             round(exp(ff$confint[2])),"\\}"))
+abline(h=min(c1$y)+1.92,lty=2)
+abline(v=ff$fit)
+pu <- par("usr")
+rect(exp(ff$confint[1]),pu[3],exp(ff$confint[2]),pu[4],
+     col=rgb(0,0,0,alpha=0.3),border=NA)
+@ 
+\end{frame}
+
+<<loadsims,echo=FALSE>>=
+load("mosqbatch1.RData")
+## 5-dimensional array of simulation results:
+## it's actually a bit weird in this case because
+## I used aaply() to save the results as an array,
+## but they're actually somewhat irregular (different
+## values of M were used for each B), so na.omit()
+## is necessary ...
+
+library(reshape2)
+library(abind)
+
+mm <- na.omit(melt(a0))  ## array to (long) data frame
+## compute relative bias, var, MSE
+mm <- transform(mm,
+          relvalue=ifelse(stat=="bias",value/B,value/B^2))
+Mbreaks <- sort(c(outer(c(1,2,5),c(10,100))))  ## handy logarithmic breaks
+@ 
+
+\begin{frame}
+\frametitle{Reasons to like maximum likelihood estimation}
+\begin{itemize}
+\item consistent and asymptotically Normal \\
+(= unbiased for large data sets)
+\pause
+\item asymptotically efficient \\
+(= most statistically powerful unbiased estimator for large data sets)
+\pause
+\item{
+\begin{quote}
+\ldots a universal ``Swiss Army Knife''. 
+When it can do the job, it's rarely the best tool for the job 
+but it's rarely much worse than the best (at least for large samples).
+[Steve Ellner]
+\end{quote}}
+\end{itemize}
+\end{frame}
+
+\begin{frame}
+  \frametitle{Simulation results: bias and mean squared error}
+<<sim1,out.width="1.1\\textwidth",fig.width=8,fig.height=3>>=
+(g1 <- ggplot(subset(mm,stat!="var" & method=="MLE"),
+              aes(x=M,y=relvalue,colour=method,shape=method))+
+ geom_point(alpha=0.5)+geom_line()+
+ labs(y="",x="Number of mosquitoes")+
+ facet_grid(stat~B,scales="free",labeller=label_both)+zmargin+
+ scale_x_log10(breaks=Mbreaks)+
+ geom_hline(yintercept=0,colour="gray"))
+@
+Strong negative bias for small $B$/very small $M$, \\
+slight positive bias $\approx 20\%$ for intermediate samples
+\end{frame}
+
+\begin{frame}
+  \frametitle{Good-Turing estimators}
+
+  \begin{itemize}
+    \item{alternative approach: \\
+        count doublets, $W= \sum v_i\cdot(v_i-1)$: set observed=expected and solve for $\hat B$:
+$$
+\hat B = 1 + \frac{1}{2} \sqrt{1+4M(M-1)/W}
+$$
+}
+\pause
+\item Related (loosely) to \emph{Good-Turing estimators}
+  \citep{good_studies_1979} \\
+  (estimated \href{http://www.newswise.com/articles/view/501440/}{frequency distribution of codebook pages})
+  \pause
+\item the Pacala method: \\
+  if you're reinventing important wheels \\
+  you're on the right track!
+\end{itemize}
+\end{frame}
+\begin{frame}
+  \frametitle{Estimator comparison}
+<<sim2,out.width="1.1\\textwidth",fig.width=8,fig.height=3>>=
+mm2 <- droplevels(subset(mm,stat!="var" & method %in% c("MLE","doublets")))
+mm2$method <- factor(mm2$method,levels=c("MLE","doublets"))
+(g2 <- g1 %+% mm2)
+@
+Doublet method works (much) better: \\
+largely suppresses positive bias
+
+\end{frame}
+
+\begin{frame}
+\frametitle{a bit of data}
+<<fig.width=8,fig.height=3,out.width="\\textwidth">>=
+mdat <- read.csv("Robin_bloodmeals.csv")
+##    data.frame(site=rep(c("Foggy Bottom","Baltimore","NMNH"),
+##                   c(4,2,1)),
+##                   year=c(2004,2006,2008,2011,2008,2010,2004),
+##                   M=c(19,11,13,17,40,18,14))
+Kfun <- function(N,d,t,q) {
+    N-d-2*t-3*q
+}
+K <- with(mdat,Kfun(N,Doublets,Triplets,Quadruplet))
+M <- mdat$N
+res <- matrix(nrow=nrow(mdat),ncol=3)
+for (i in 1:nrow(mdat)) {
+    if (K[i]==M[i]) {
+        res[i,] <- c(NA,lboundfun(M[i]),NA)
+    } else {
+        res[i,] <- unlist(fitB(K[i],M[i]))
+    }
+}
+badlo <- is.na(res[,2])
+res[badlo,2] <- log(M[badlo])
+resexp <- exp(res)
+resexp[is.na(resexp)] <- Inf
+colnames(resexp) <- c("B.hat","B.lo","B.hi")
+mdat2 <- data.frame(mdat,resexp)
+mdat2$K <- K
+doublets <- with(mdat,Doublets+2*Triplets+3*Quadruplet)
+mdat2$B.hat2 <- 1+0.5*sqrt(1+4*M*(M-1)/doublets)
+ggplot(mdat2,aes(factor(Year),B.hat,colour=(N==K)))+facet_wrap(~Site,scale="free_x")+
+    geom_pointrange(aes(ymin=B.lo,ymax=B.hi))+scale_y_log10()+
+        geom_point(aes(y=B.hat2),shape=2)+
+            labs(x="year",y="Est. bird population")+
+        annotate("rect",xmin=-Inf,xmax=Inf,ymin=10,ymax=40,colour="gray",alpha=0.2)
+@ 
+\end{frame}
+\begin{frame}
+  \frametitle{Conclusions \& open questions}
+  
+  \begin{columns}[t]
+    \begin{column}{0.5\textwidth}
+      \textbf{Conclusions}
+      \begin{itemize}
+      \item doublet estimator is better (bias/MSE), \\
+        reasonable for $M > 10-20$
+      \item estimates \emph{effective} population size --- \\ 
+        exactly what we want for vector-borne disease models!
+      \end{itemize}
+    \end{column}
+    \pause
+    \begin{column}{0.5\textwidth}
+      \textbf{Open questions}
+      \begin{itemize}
+      \item confidence intervals, $K==M$ estimates for doublets
+      \item estimate coverage?
+      \item estimating heterogeneity/ \\
+        subtler effects of heterogeneity on disease dynamics?
+      \item combining data from multiple sites \& years
+      \end{itemize}
+    \end{column}
+  \end{columns}
+\end{frame}
+
+\section{Turtle surveys}
+\setcounter{subsection}{1}
+
+\begin{frame}
+  \frametitle{Green turtles at Tortuguero}
+  \begin{columns}
+    \begin{column}{0.5\textwidth}
+      \begin{itemize}
+        \item green turtles \\ (\emph{Chelonia mydas})  \\
+          at Tortuguero, Costa Rica
+        \item data from Carr/Bjorndal/Bolten
+        \item survey data: 1971--present; \\
+          renesting interval data: \\
+          1955--present
+        \item estimate detection probability, \\
+         recover 1955-1970 population size estimates?
+        \end{itemize}
+      \end{column}
+    \begin{column}{0.5\textwidth}
+      \includegraphics[width=2in]{pix/GreenSeaTurtleTortuguero_CCC-Photo.jpg} \\
+      \tiny{Sea Turtle Conservancy / \url{http://www.conserveturtles.org}}
+    \end{column}
+  \end{columns}
+\end{frame}
+
+\begin{frame}
+  \frametitle{data}
+<<getdata>>=
+source("returntime-funs.R")
+load("all_nesting.RData")
+@ 
+
+<<>>=
+theme_set(theme_bw(base_size=20))
+@ 
+<<turtle1_raw,fig.width=10,out.width="1.1\\textwidth",dev="tikz">>=
+ggplot(x3,aes(x=interval,y=num,group=factor(dyear)))+
+      geom_line(alpha=0.5)+
+    facet_wrap(~decade)+scale_y_sqrt()+
+    xlab("Renesting interval (days)")+ylab("Counts (square-root scale)")+zmargin
+@ 
+\end{frame}
+
+\newcommand{\bth}{\boldsymbol{\theta}}
+\begin{frame}
+  \frametitle{Fit by convolution}
+  \begin{itemize}
+  \item true distribution of inter-nesting intervals $F(t,\bth )$
+    \pause
+  \item distribution of turtles observed on their second nesting attempt is
+    $p F$, \\
+    where $p$ is the detection probability
+  \item distribution of $n$\textsuperscript{th}-nesting-interval times: \\
+    $n$-fold \emph{convolution}, $F^n \equiv F*F*F* \ldots * F$
+    \pause
+  \item probability of detecting after $n$ intervals is geometric,
+    $p (1-p)^{n-1}$
+    \pause
+  \item overall distribution observed is
+$$
+F^* = \sum_n p (1-p)^{n-1} F^n(\bth )
+$$
+\item $\mbox{obs}_t \sim \mbox{NegBinom}(F^*(t))$
+\end{itemize}
+\end{frame}
+
+\begin{frame}
+  \frametitle{Brute force approach}
+  \begin{itemize}
+  \item make $F$ a discrete distribution with support from days 7--18
+  \item $\bth$ is just 11 parameters describing the distribution \\
+    (constraints: $0<F_i<1$, $\sum F_i=1$)
+    \pause
+  \item \sout{use \code{distr} package in R for numerical convolution calculations} \\
+    brute-force convolution calculation
+  \item (various MCMC/latent-variable strategies also possible, \\
+    but probably slower)
+  \end{itemize}
+\end{frame}
+
+<<>>=
+predval <- function(m,rtime=5:65) {
+  cm <- coef(m)
+  n <- length(cm)
+  dgendiscmix(rtime,cm[-n],cm[n])
+}
+load("returntime-batch7.RData")
+load("returntime-batch6.RData")
+load("returntime-batch5.RData")
+
+ff <- "allpredvals.RData"
+if (!file.exists(ff)) {
+    allpredvals <- lapply(m12B_gendiscP,
+                          predval)
+    save("allpredvals",file=ff)
+} else load(ff)
+@ 
+
+<<>>=
+library(plyr)
+library(reshape2)
+allrenest <- t(laply(m12B_gendiscP,
+                    function(x) alrInv(coef(x)[1:11])))
+svec <- 7:18
+rownames(allrenest) <- svec
+rtvec <- 5:65
+allrenest2 <- setNames(melt(allrenest),c("day","year","proportion"))
+preddat <- data.frame(year=rep(as.numeric(names(allpredvals)),
+                               each=length(rtvec)),
+                      interval=rep(rtvec,length(m12B_gendiscP)),
+                      prop=unlist(allpredvals),
+                      num=x3$num,
+                      totnum=x3$totnum)
+@ 
+
+\begin{frame}
+  \frametitle{Yearly renesting interval estimates}
+<<rtplot2>>=
+qplot(day,proportion,group=year,data=allrenest2,geom="line",alpha=I(0.5))
+@ 
+\end{frame}
+
+\begin{frame}
+  \frametitle{Prediction for 1971}
+<<pred1971>>=
+ggplot(subset(x3,year==1971),aes(x=interval,y=num/totnum))+
+    geom_point()+
+    geom_line(aes(x=interval,y=prop),
+              data=subset(preddat,year==1971),colour="red")+
+    geom_line(aes(x=day,y=proportion),
+              data=subset(allrenest2,year==1),colour="blue")+
+      scale_y_sqrt()+
+      xlab("Renesting interval (days)")+ylab("Proportion")
+@ 
+\end{frame}
+
+<<detprob,warning=FALSE>>=
+ctab <- laply(m12B_gendiscP,function(x) coef(summary(x)))
+ctab2 <- laply(m11B_gendiscNB,function(x) coef(summary(x)))
+ctab3 <- abind(ctab[,"p",],ctab2[,"p",],along=3)
+dimnames(ctab3)[[1]] <- names(m12B_gendiscP)
+dimnames(ctab3)[[3]] <- c("Poisson","NB")
+names(dimnames(ctab3)) <- c("year","val","model")
+ctab4 <- dcast(melt(ctab3[,c("Estimate","Std. Error"),]),
+                    year+model~val)
+ctab4 <- ddply(ctab4,c("model"),
+               function(x) {
+                   transform(x,order=rank(Estimate),
+                             dmin=Estimate-2*`Std. Error`,
+                             dmax=Estimate+2*`Std. Error`)
+                   })
+ctab4B <- rename(ldply(m13_gendiscPois,
+                   function(x) {
+                       r <- coef(summary(x))["p",c("Estimate","Std. Error")]
+                       r <- data.frame(rbind(r),check.names=FALSE)
+                       r <- transform(r,
+                                      dmin=Estimate-2*`Std. Error`,
+                                      dmax=Estimate+2*`Std. Error`)
+                       }),
+                 c(.id="year"))
+ctab4B$year <- as.numeric(ctab4B$year)
+ctab5 <- rbind(subset(ctab4,model=="Poisson",select=-c(model,order)),
+               ctab4B)
+@ 
+
+\begin{frame}
+  \frametitle{Estimated detection probabilities}
+<<"detprob2",dev="tikz">>=
+qplot(year,Estimate,data=ctab5,colour=year<1971,
+      ylab="Est. detection probability $(\\hat p)$",
+      xlab="Year")+
+    geom_linerange(aes(ymin=dmin,ymax=dmax))+
+    scale_y_continuous(limit=c(0,1),oob=squish)+
+    theme(legend.position="none")
+@ 
+\end{frame}
+
+\begin{frame}
+\frametitle{calibration}
+<<fig.width=8,out.width="\\textwidth">>=
+load("g6_turtle.RData")
+g6
+@
+\end{frame}
+
+<<>>=
+early <- read.csv("adjusted_renest_1955_1970.csv",
+                  check.names=FALSE)
+early[is.na(early)] <- 0
+names(early)[1] <- "days"
+earlytotals <- colSums(early[,-1])
+library(gdata)
+x2 <- read.xls("Adjusted renesting intervals.xls",check.names=FALSE,
+               header=TRUE)
+latetotals <- unlist(x2[nrow(x2),-c(1,ncol(x2))])
+totals <- c(earlytotals,latetotals)
+dtotals <- data.frame(year=as.numeric(names(totals)),
+                      count=c(earlytotals,latetotals))
+dtotals <- merge(ctab5,dtotals)
+dtotals2 <- transform(dtotals,
+                     adjcount=count/Estimate,
+                     adjcount_lwr=count/dmin,
+                     adjcount_upr=count/dmax)
+dtotals3 <- melt(subset(dtotals2,
+                        select=c(year,count,adjcount,adjcount_lwr,adjcount_upr)),
+                        id.var=c(1,4:5))
+dtotals3[dtotals3$variable=="count",c("adjcount_lwr","adjcount_upr")] <- NA
+@ 
+
+\begin{frame}
+  \frametitle{Raw and adjusted counts}
+<<fig.width=8>>=
+qplot(year,value,colour=variable,data=dtotals3,
+      geom=c("point","line"),xlab="Year",ylab="Total counts")+
+    scale_y_sqrt()+
+    geom_linerange(aes(ymin=adjcount_lwr,ymax=adjcount_upr))+
+    annotate("rect",xmin=1955,xmax=1970,ymin=0,ymax=Inf,
+              fill=rgb(0.2,0.2,0.2,0.3),colour=NA,oob=squish)
+@ 
+\end{frame}
+
+\begin{frame}
+  \frametitle{Conclusions \& open questions}
+  
+  \begin{columns}[t]
+    \begin{column}{0.5\textwidth}
+      \textbf{Conclusions}
+      \begin{itemize}
+      \item detection probability $\approx 60$--$70\%$ \\
+        (highly variable)
+      \item matches independent verification
+      \end{itemize}
+    \end{column}
+    \pause
+    \begin{column}{0.5\textwidth}
+      \textbf{Open questions}
+      \begin{itemize}
+      \item smoother renesting-interval curve? \\
+        year as random effect?
+      \item why does method underestimate interannual variation?
+      \end{itemize}
+    \end{column}
+  \end{columns}
+\end{frame}
+
+
+\section{Meta- stuff}
+\setcounter{subsection}{1}
+
+\begin{frame}
+  \frametitle{Cross-citation study}
+  \begin{itemize}
+  \item who cares about math biology?
+  \item more specifically, what is the information flow \\
+    from MB to bio (or math) and \emph{vice versa}?
+  \item extract information from ISI Journal Citation Report \\
+    (thanks to Aaron Berk)
+  \item find top 100 cited/citing journals for: \\
+    (Bull Math Biol, J Theor Biol, Theor Popul Biol,
+    J Math Biol, Math Biosci, PLoS Comput Biol)
+  \end{itemize}
+\end{frame}
+
+\begin{frame}
+  \frametitle{Ordination of (1/(1+avg cites))}
+<<nmds1,fig.width=8,out.width="\\textwidth">>=
+load("metaMDSplot.RData")
+g1 <- ggplot(mmdat2,aes(MDS1,MDS2,label=journal))+
+              labs(x="NMDS axis 1",y="NMDS axis 2")+
+              theme(axis.text.x=element_blank(),
+                   axis.text.y=element_blank())
+g1+geom_text(aes(colour=cat3),size=3)+
+    scale_colour_brewer(palette="Dark2")
+@ 
+\end{frame}
+
+\begin{frame}
+  \frametitle{Biology + math biology only}
+<<nmds2,fig.width=8,out.width="\\textwidth">>=
+colvec <- c(colorRampPalette(c("blue","green"))(14),
+            "cyan","purple","orange")
+g1 %+% subset(mmdat2,cat4!="other") + 
+    geom_text(aes(colour=cat4),size=3)+
+    scale_colour_manual(name="",values=colvec)
+@ 
+\end{frame}
+  
+
+
+\begin{frame}
+\tiny
+\bibliography{yiw}
+\end{frame}
+
+\end{document}
+
