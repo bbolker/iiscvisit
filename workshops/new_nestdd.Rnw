@@ -1,0 +1,224 @@
+\documentclass{article}
+\usepackage{url}
+\usepackage{hyperref}
+\usepackage{natbib}
+\usepackage[utf8]{inputenc}
+\usepackage[english]{babel} %% texi2dvi tilde bug
+\title{Notes on turtle density-dependence}
+\author{Ben Bolker}
+\usepackage{fancyvrb}
+\newcommand{\code}[1]{{\tt #1}}
+\VerbatimFootnotes
+
+\begin{document}
+\maketitle
+\bibliographystyle{chicago}
+
+Version: \Sexpr{as.character(Sys.time())}
+
+<<opts,echo=FALSE>>=
+library(knitr)
+opts_chunk$set(tidy=FALSE,fig.width=5,fig.height=5,out.width="0.7\\textwidth",echo=FALSE,fig.align="center")
+@
+
+Example: sea turtles \citep{Tiwari+2006}.
+
+How likely are nesting female sea turtles to dig up 
+someone else's nest?  Suppose Poisson-distributed other
+nests with density $D$ (per m$^2$).  Then the mean number of nests
+within an area $A$ (m$^2$) is $DA$, and the probability of
+digging up \emph{no} nests is $e^{-DA}$.  If we know
+density, then we can fit the probability of \emph{not}
+digging up any nests with a GLM in a slightly sneaky way
+(fit a binomial with a log link, and suppress the intercept
+to make sure the curve goes through zero).
+
+Get the data and calculate the total and proportion dug up:
+<<getdat,echo=TRUE>>=
+dat <- read.csv("dufemalepers.csv") ## get data
+dat <- transform(dat,
+                 tot=du+notdu,
+                 duprop=du/(du+notdu))
+@ 
+
+Basic model --- using \code{notdu} as the response.
+Leave out the point at zero density/no nests dug up.
+<<glm1,echo=TRUE>>=
+m1 <- glm(cbind(notdu,du)~density-1,
+          subset=density>0,
+          family=quasibinomial(link="log"),
+          data=dat)
+@ 
+
+Plot the regression diagnostics
+<<fig1>>=
+oldpars <- par(mfrow=c(2,2),las=1,bty="l",mgp=c(2,1,0),
+              mar=c(4,3,1.2,1))
+plot(m1)
+newpars <- par(oldpars)
+@ 
+
+Uh-oh, the regression diagnostics don't look good.
+In particular, we can see a pattern in the residuals vs.
+fitted plot (underprediction for low values, overprediction
+for high values) and the scale-location plot (low variance
+for low fitted values).
+
+Let's draw some pictures of the data.
+<<getlibs>>=
+library(ggplot2)
+theme_set(theme_bw())
+@ 
+
+A basic plot, with size representing the
+total number sampled:
+<<plot1>>=
+(g1 <- ggplot(dat,aes(x=density,y=duprop))+
+ geom_point(aes(size=tot),alpha=0.7,colour="blue"))
+@ 
+
+Let's superimpose our model fit on this plot.
+We could try to use \verb+geom_smooth+, but
+sometimes it's just too hard, and we have
+to do things a bit more by hand.
+
+Given a (new) design matrix $X$, estimated parameters
+$\hat \beta$, and an estimated variance-covariance
+matrix $V$, the predicted values are $ X \hat \beta$
+and the variances of the predictions are $X V X^T$ (check!)
+
+For example, let's just look at a single
+prediction for a linear regression: 
+$X = (1 1.5)$; $\hat \beta=(1 2)$; 
+$\Sigma = \left( \begin{array}{cc} 0.7 0.2 & 0.2 0.7 \end{array} \right)$.
+Then the prediction is $\hat \beta_1 \cdot 1 + \hat \beta_2 \cdot 1.5$
+and the variance of the prediction is
+$$
+\left( \begin{array}{cc} x_1 & x_2 \end{array}\right) \left( \begin{array}{c} x_1 \sigma_1^2 + x_2 \sigma_{12} \\
+                                  x_1 \sigma_{12} + x_2 \sigma_2^2 
+                                \end{array} \right)
+= x_1^2 \sigma_1^2 + x_2^2 \sigma_2^2 +
+2 x_1 x_2 \sigma_{12}
+$$
+We have to use \code{predict} to get the values,
+compute the confidence intervals on the linear predictor
+scale (log in this case), then back-transform:
+<<pred1>>=
+predframe <- data.frame(density=seq(0,0.18,by=0.001))
+pp <- predict(m1,newdata=predframe,se.fit=TRUE)
+predframe$duprop <- 1-exp(pp$fit)
+predframe$low <- 1-exp(pp$fit+1.96*pp$se.fit)
+predframe$high <- 1-exp(pp$fit-1.96*pp$se.fit)
+@ 
+
+<<plot2>>=
+(g2 <-g1+geom_line(data=predframe)+
+      geom_ribbon(data=predframe,
+                  aes(ymin=low,ymax=high),
+                  colour=NA,alpha=0.2))
+@ 
+
+This plot reflects the same issues we saw in 
+the diagnostic plot.
+
+How does a smooth (GAM) fit look
+(no start-at-zero constraint)?
+<<plotgam,message=FALSE>>=
+library(mgcv)
+g2+geom_smooth(colour="red",method="gam",family="binomial",
+               aes(weight=tot))+
+  coord_cartesian(ylim=c(-0.02,0.4))
+@ 
+Not really what we were looking for \ldots
+
+Let's see if a quadratic curve does better \ldots
+<<fitquad>>=
+m2 <- update(m1,.~.+I(density^2))
+@ 
+
+Go through the same machinery again:
+<<quadCI>>=
+qp <- predict(m2,newdata=predframe,se.fit=TRUE)
+qpredframe <- predframe
+qpredframe$duprop <- 1-exp(qp$fit)
+qpredframe$low <- 1-exp(qp$fit+1.96*qp$se.fit)
+qpredframe$high <- 1-exp(qp$fit-1.96*qp$se.fit)
+@ 
+<<plotquad>>=
+(g2 +geom_line(data=qpredframe,colour="purple")+
+      geom_ribbon(data=qpredframe,
+                  aes(ymin=low,ymax=high),
+                  colour=NA,alpha=0.2))
+@ 
+
+This fits the data better but has some obvious problems.
+
+We could fit a fully nonlinear model:
+<<fitmle,echo=TRUE,message=FALSE>>=
+library(bbmle)
+m4 <- mle2(du~dbinom(prob=a*density/(hm+density),size=tot),
+           data=dat,
+           start=list(a=0.15,hm=0.05),
+           method="L-BFGS-B",
+           lower=c(a=0.001,hm=0.001))
+@ 
+\ldots but it's harder --- we have to provide
+starting values, etc.
+
+There's another, slightly easier way to fit this model
+based on using an inverse link in the GLM.
+Suppose $p \propto d/(1+d)$ where $d$ is density.
+Then $1/p \propto 1/d + C$.  So let's try
+using 1/density as the predictor, with
+an inverse link (we omit the density=0 point).
+<<fitinvglm,echo=TRUE>>=
+m5 <- glm(duprop~I(1/density),weight=tot,
+          subset=density>0,
+          family=quasibinomial(link="inverse"),
+          data=dat)
+@ 
+
+Again predict and inverse-link:
+<<predinvglm>>=
+zpredframe <- predframe
+zp <- predict(m5,newdata=zpredframe,se.fit=TRUE)
+zpredframe$duprop <- 1/zp$fit
+zpredframe$low <- 1/(zp$fit+1.96*zp$se.fit)
+zpredframe$high <- 1/(zp$fit-1.96*zp$se.fit)
+@ 
+
+<<plotinvglm>>=
+(g2 + geom_line(data=zpredframe,colour="purple")+
+  geom_ribbon(data=zpredframe,
+              aes(ymin=low,ymax=high),
+              colour=NA,fill="purple",alpha=0.2))
+@ 
+
+Looks OK.  The bottom lines from a biological point
+of view:
+\begin{itemize}
+\item  our previous (exponential model) overpredicted
+nest destruction (proportion of nesting females digging up
+an existing nest) for high densities ($\approx 0.25$ predicted
+previously vs $\approx 0.15$ now).  
+\item If we wanted to put this
+curve into a separate model we could use the coefficients
+in the form $p = 1/(a+b/\textrm{density})=\textrm{density}/(a \cdot \textrm{density}+b)$, where $a=\Sexpr{round(coef(m5)[1],3)}$ and $b=\Sexpr{round(coef(m5)[2],3)}$.
+\item I don't know exactly what biological/spatial process leads to the leveling off of the curve: it could be something about the spatial distribution of nests (I think that a clustered distribution of nests would have this effect?), or behavioural (can't quite think of the mechanism at the moment).
+\end{itemize}
+
+The new diagnostic plot:
+
+<<new_diagplot>>=
+par(newpars)
+plot(m5)
+par(oldpars)
+@ 
+
+There are a few weird points at the top of the Q-Q plot,
+(and the predicted values are very skewed), but otherwise
+things look OK.
+
+
+\bibliography{glmm}
+\end{document}
