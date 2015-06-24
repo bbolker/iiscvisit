@@ -1,0 +1,2233 @@
+%% TO DO!
+% animations??
+%% graphical tweaks: fix title/lower bar
+%% add refs -- Day ! JRSI follow-ups
+%% stuff on resistance/tolerance?
+%% fuss with graphics defaults
+%% animation/tweaks of myxo results; zoom in?
+%% 
+%% convert to knitr?
+%%
+%% 
+\documentclass[english]{beamer}
+\definecolor{links}{HTML}{2A1B81}
+\hypersetup{colorlinks,linkcolor=,urlcolor=links}
+\usepackage{natbib}
+\usepackage[T1]{fontenc}
+\usepackage[latin1]{inputenc}
+\usepackage{amsmath}
+\usepackage{multicol}
+\usepackage{color}
+\usepackage{hyperref}
+\usepackage{amssymb}
+\usepackage{bm}
+\usepackage{graphicx}
+\usepackage{animate}
+\usepackage{arydshln}
+\newcommand{\colemph}[1]{{\color{red} \emph{#1}}}
+%\bibliographystyle{shortreflist}
+\bibliographystyle{notitle}
+
+\usetheme{Frankfurt}
+\usecolortheme{dove}
+\setbeamercovered{transparent}
+\setbeamercolor{description item}{fg=blue}
+\newcommand{\citepx}[1]{{\small \citep{#1}}}
+\newcommand{\citex}[1]{{\small \cite{#1}}}
+% \renewcommand{\descriptionlabel}[1]{\hspace{\labelsep}\textbf{#1}}
+\usepackage{babel}
+
+% "Beamer infolines outer theme with miniframe bullets only for the current section"
+% (http://tex.stackexchange.com/a/45152/3323)
+%\useoutertheme[subsection=false]{miniframes}
+\useoutertheme[subsection=false]{miniframes}
+%% \setbeamertemplate{mini frame in other subsection}{}
+%% \usepackage{etoolbox}
+\makeatletter
+\beamer@compressfalse
+%% \patchcmd{\insertnavigation}{\hskip-1.875ex plus-1fill}{}{}{}
+%% \patchcmd{\sectionentry}{\beamer@section@set@min@width}{}{}{}
+%% \patchcmd{\sectionentry}{\hskip1.875ex plus 1fill}{}{}{}
+%% \patchcmd{\sectionentry}{\hyperlink{Navigation#3}{{\usebeamertemplate{section in head/foot shaded}}}}{}{}{}
+%% \patchcmd{\slideentry}{\beamer@ypos=#2\relax}{}{}{}
+%% \patchcmd{\fakeslideentry}{\beamer@ypos=#2\relax}{}{}{}
+\makeatother 
+
+\begin{document}
+
+\newcommand{\rzero}{{\mathcal R}_0}
+\newcommand{\rzeroi}[1]{{\mathcal R}_{0,#1}}
+
+
+\makeatletter
+\def\newblock{\beamer@newblock}
+\makeatother 
+
+<<setup,echo=FALSE,message=FALSE>>=
+library(knitr)
+opts_chunk$set(echo=FALSE,error=TRUE,
+               fig.align="center",out.width="0.8\\textwidth",
+               fig.width=6,fig.height=4)
+library(deSolve)
+library(reshape)
+library(lattice)
+library(latticeExtra)
+library(emdbook)
+library(nlme)
+library(bbmle)
+load("data/myxo-virenv.RData")
+load("data/myxoz.RData")
+load("data/paper-virbatch-cv3.RData")
+load("data/grick1.RData")
+source("virulence_funs.R")
+library(ggplot2)
+theme_set(theme_bw())
+library(scales) ## for squish()
+library(gridExtra) ## for grid.arrange()
+library(mgcv)
+library(plyr)   ## for mutate()
+library(psyphy) ## for restricted-link models
+library(reshape2)
+library(splines)  ## for vir asymptote profile
+library(deSolve)
+library(Hmisc)
+library(gsubfn)
+source("WNVfuns_3.R")
+@ 
+
+\title[Eco-evolutionary virulence dynamics]{Eco-evolutionary virulence of pathogens: \\
+models and speculations}
+\author[Ben Bolker]{Ben~Bolker, McMaster University \\
+  {\tiny Departments of Mathematics \& Statistics and Biology}}
+\institute{NCBS}
+\date{3 July 2015}
+% \pgfdeclareimage[height=0.5cm]{uflogo}{letterhdwm}
+% \logo{\pgfuseimage{uflogo}}
+\AtBeginSubsection[]{
+  \frame<beamer>{ 
+     \frametitle{Outline}   
+     \tableofcontents[currentsection,currentsubsection] 
+   }
+ }
+
+\begin{frame}
+\titlepage
+\end{frame}
+% \beamerdefaultoverlayspecification{<+->}
+
+\begin{frame}
+\frametitle{Outline}
+\tableofcontents{}
+\end{frame}
+
+\begin{frame}
+\frametitle{Acknowledgements}
+\begin{description}
+\item[People] Arjun Nanda and Dharmini Shah; Christophe Fraser; Marm Kilpatrick; Anson Wong
+\item[Support] NSF IRCEB grant 9977063; QSE$^3$ IGERT; NSERC Discovery grant
+\end{description}
+
+\end{frame}
+
+\section{Overview}
+
+\subsection{The evolution of host-pathogen theory}
+
+\begin{frame}
+\frametitle{Host-pathogen evolutionary biology}
+Why is it interesting?
+\begin{itemize}
+\item{Intellectual merit
+  \begin{itemize}
+  \item Coevolutionary loops
+  \item Cryptic effects
+  \item Eco-evolutionary dynamics \citepx{luo_navigating_2013}
+  \item Cool stories
+  \item Lots of data (sometimes)
+  \end{itemize}
+}
+\pause
+\item{Broader applications
+  \begin{itemize}
+  \item Medical
+  \item Conservation and management 
+  \item Outreach
+  \end{itemize}
+}
+\end{itemize}
+\end{frame}
+
+%% \begin{frame}
+%% \frametitle{Word salad}
+
+%% Maybe a word cloud here (\href{http://thebiobucket.blogspot.ca/2012/08/follow-up-making-word-cloud-for-search.html}{Cichini})
+<<eval=FALSE>>=
+source("GScholarScraper_3.1.R")
+df <- GScholar_Scraper("allintitle:evolution of virulence", since=1980,
+                        citation=1)
+library(tm)
+library(wordcloud)
+corpus <- Corpus(VectorSource(df$TITLES))
+corpus <- tm_map(corpus, removeWords,
+                 c(stopwords(), "PDF", "B", "DOC",
+                   "HTML", "BOOK", "CITATION", "evolution","virulence"))
+corpus <- tm_map(corpus, removePunctuation)
+tdm <- TermDocumentMatrix(corpus)
+m <- as.matrix(tdm)
+v <- sort(rowSums(m), decreasing = TRUE)
+d <- data.frame(word = names(v), freq = v)
+# remove numbers from strings:
+d <- d[-grep("[0-9]", d$word), ]
+# print wordcloud:
+wordcloud(d$word, d$freq)
+@
+%% \begin{itemize}
+%% \item Virulence
+%% \item Spatial
+%% \item Coevolution of resistance/tolerance/virulence
+%% \item Host heterogeneity
+%% \item Effects of host nutrition/condition
+%% \item Mutualists and cheaters
+%% \end{itemize}
+%% \end{frame}
+
+\begin{frame}
+\frametitle{Virulence: definitions}
+
+\begin{itemize}
+\item General public: badness
+\item Plant biologists: infectivity
+\item Evolutionists: loss of host fitness
+\item Theoreticians: \emph{rate} of host mortality \\
+  (mortality rate vs. case mortality vs. clearance)
+\end{itemize}
+\end{frame}
+
+\begin{frame}
+\frametitle{Evolution of virulence evolution theory}
+
+\begin{description}
+\item[Classical dogma] monotonic trend toward avirulence
+\pause
+\item[Ewald era] virulence as an evolved (adaptive) trait.  Tradeoff theory, modes of transmission.
+\pause
+\item[post-Ewald] more formal tradeoff models, mostly based on $R_0$ optimization.  Adaptive dynamics
+\pause
+\item[Now] 
+\begin{itemize}
+\item tradeoff backlash
+\item within-host dynamics/multi-level models
+\item eco-evolutionary dynamics
+\item host effects: resistance vs tolerance vs virulence
+\end{itemize}
+\end{description}
+\end{frame}
+
+\begin{frame}
+\frametitle{Basic tradeoff theory: assumptions}
+\begin{itemize}
+\item Homogeneous, non-evolving hosts
+\item No superinfection/coinfection
+\item Horizontal, direct transmission
+\item Tradeoff between \emph{rate} of transmission \\
+  and length of infectious period
+\item Infectious period $\propto$ 1/clearance \\
+  (= recovery+disease-induced mortality+natural mortality)
+\end{itemize}
+\end{frame}
+
+\begin{frame}
+\frametitle{Tradeoffs, $\rzero$, and $r$}
+<<tradeoff1>>=
+par(cex=1.5,lwd=2,bty="l",yaxs="i",las=1,mgp=c(2,0.5,0),
+    mar=c(3,3,1,1))
+tmpf <- function(c=5,gamma=1/3) {
+    curve(c*(pmax(0,x))^gamma,from=-2,to=5,axes=FALSE,
+          xlab="            Clearance+disease-induced mort.",ylab="",
+          xaxs="i",yaxs="i")
+    abline(v=0)
+    rect(-1,7,1,10,col="white",border=NA)
+    text("Transmission\nrate",x=0,y=8,xpd=NA)
+    axis(side=1,at=c(-2,0:5),labels=c("mu",0:5))
+}
+tmpf()
+Rcol <- "blue"
+rcol <- "red"
+abline(a=2,b=1,col=Rcol)
+## what is the optimal slope here?
+abline(a=2*4/3,b=4/3,col=Rcol)
+abline(a=2*5/3,b=5/3,col=Rcol)
+@
+\end{frame}
+
+\begin{frame}
+\frametitle{Tradeoffs, $\rzero$, and $r$}
+<<tradeoff2>>=
+par(cex=1.5,lwd=2,bty="l",yaxs="i",las=1,mgp=c(2,0.5,0),
+    mar=c(3,3,1,1))
+tmpf()
+abline(a=2,b=1,col=rcol,lty=2)
+abline(a=3,b=1,col=rcol,lty=2)
+abline(a=4.35,b=1,col=rcol,lty=2)
+@
+\end{frame}
+
+\begin{frame}
+\frametitle{Tradeoffs, $\rzero$, and $r$}
+<<tradeoff3>>=
+par(cex=1.5,lwd=2,bty="l",yaxs="i",las=1,mgp=c(2,0.5,0),
+    mar=c(3,3,1,1))
+tmpf()
+abline(a=2,b=1,col=rcol,lty=2)
+abline(a=3,b=1,col=rcol,lty=2)
+abline(a=4.35,b=1,col=rcol,lty=2)
+abline(a=2,b=1,col=Rcol)
+## what is the optimal slope here?
+abline(a=2*4/3,b=4/3,col=Rcol)
+abline(a=2*5/3,b=5/3,col=Rcol)
+@
+\end{frame}
+
+\subsection{Toy models}
+
+\begin{frame}
+\frametitle{Epidemiological model}
+
+\begin{multicols}{2}
+%{\small
+%\begin{equation*}
+%\begin{split}
+%\frac{dS}{dt} & =  b-\mu S - \beta(\alpha) S I \\
+%\frac{dI}{dt} & =  \beta(\alpha) S I - (\mu+\rho+\alpha) I \\
+%\frac{dR}{dt} & =  \rho I - \mu R
+%\frac{d\bar \alpha}{dt} & =  h \cdot \frac{(dI/dt)}{I}
+%\end{split}
+%\end{equation*}
+%}
+% \begin{itemize}
+% \item Standard SIR model
+%   \pause
+% \item Constant population size
+%   \pause
+% \item Recovery unimportant
+%   \pause
+% \item Rescale ($\mu=1$, $N=1$)
+% \end{itemize}
+
+\begin{itemize}
+\item SIR model
+\pause
+\item Constant population size (birth=death)
+\pause
+\item Ignore recovery
+  \pause
+\item Rescale: $\mu=1$, $N=1$
+  (time units of host lifespan)
+\end{itemize}
+
+\columnbreak
+
+\includegraphics[width=1in]{pix/boxmodel2}
+\end{multicols}
+\end{frame}
+
+\begin{frame}
+\frametitle{The model (2): evolutionary dynamics}
+
+Incorporate \colemph{trait dynamics}
+%What should we leave out?
+
+Standard quantitative genetics model \citepx{Abrams2001}:
+\pause
+\begin{itemize}
+  \item Fitness depends on mean trait value ($\bar \alpha$) \\
+    and ecological context (proportion susceptible)
+    \pause
+  \item Constant additive genetic variance $V_g$
+    \pause
+  \item Trait evolves toward increased fitness: \\
+    rate proportional to $\Delta \mbox{fitness}/\Delta \mbox{trait}$
+  \end{itemize}
+\pause
+Alternatives: \\
+multi-strain, adaptive dynamics, PDEs, agent-based models \ldots
+  
+\end{frame}
+
+\begin{frame}
+\frametitle{Evolutionary dynamics, cont.}
+<<evol1>>=
+c=5; m=1.5; p = 2
+ffun = function(x,I) c*x^(1/p)*(1-I)-(m+x)
+I = 0.1
+par(cex=2,lwd=2,bty="l",yaxs="i",las=1,mgp=c(1,0.5,0),
+    mar=c(3,3,1,1))
+curve(ffun(x,I=I),from=0,to=10,axes=FALSE,
+      ylim=c(0,4),
+      xlab="Virulence",ylab="Fitness (w)",n=300)
+x1 = 3
+y1 = ffun(x1,I=I)
+x2 = 4
+y2 = ffun(x2,I=I)
+segments(c(x1,x2),c(y1,y1),c(x2,x2),c(y1,y2))
+arrows(x1,y1-0.15,x2,y1-0.15,angle=15,col=2)
+box()
+
+text(6,ffun(6,0.1),pos=4,paste0("frac inf=",0.1),xpd=NA)
+##text(c(6,6)+0.1,ffun(c(6,6),c(I2,0.1)),
+##     pos=4,paste("frac inf=",c(I2,0.1),sep=""),xpd=NA)
+@
+\end{frame}
+
+\begin{frame}
+\frametitle{Evolutionary dynamics, cont.}
+<<evol1B>>=
+<<evol1>>
+I2=0.3
+text(6.1,ffun(6,I2),pos=4,paste0("frac inf=",I2),xpd=NA)
+I=I2
+curve(ffun(x,I=I2),add=TRUE,lty=2)
+x1=5
+x2=4
+y1 = ffun(x1,I=I2)
+y2 = ffun(x2,I=I2)
+segments(c(x1,x2),c(y1,y1),c(x2,x2),c(y1,y2))
+arrows(x1,y1-0.15,x2,y1-0.15,angle=15,col=2)
+abline(v=4,col="gray")
+## text(4,4.5,
+##     expression(a==b==c,
+##  expression(paste(frac(d*bar(alpha),dt)==V[g]*frac(d*w,d*bar(alpha)),
+##      {}==V[g]*frac((dI/dt)/I,d*bar(alpha)))),
+##     cex=0.8)
+@ 
+\end{frame}
+
+\begin{frame}
+\frametitle{Power-law tradeoff curves}
+
+<<tcurve>>=
+par(cex=2,lwd=2,bty="l",yaxs="i",las=1,mgp=c(1,0.5,0),
+    mar=c(3,3,1,1))
+curve(x^(1/2),axes=FALSE,from=0,to=5,
+      ylab="Transmission",xlab="Virulence",ylim=c(0,4))
+curve(x^(1/3),add=TRUE,col=2)
+curve(2*x^(1/2),add=TRUE,col=4)
+box(bty="l")
+##axis(side=1,at=c(0,5),label=rep("",2))
+par(xpd=NA)
+text(1.5,4.2,expression(beta(alpha)==c*alpha^{1/gamma}),cex=1.2,xpd=NA)
+text(3.9,3.3,expression(list(c==2,gamma==2)),col=4)
+text(3.6,2.3,expression(list(c==1,gamma==2)),col=1)
+text(3.6,1.2,expression(list(c==1,gamma==3)),col=2)
+@ 
+\end{frame}
+
+
+\section[Emerging disease]{Transient virulence and emerging diseases}
+
+\subsection{Overview}
+
+\begin{frame}
+\frametitle{(Why) are emerging pathogens more virulent?}
+
+What might explain initially high, but rapidly decreasing,
+virulence of emerging pathogens?
+\begin{itemize}
+\item Pathogens with low virulence go unnoticed
+  \pause
+\item Hosts less resistant to / tolerant of novel parasites 
+  \pause
+\item High transmission $\to$ frequent coinfection $\to$ selection for virulence
+\pause
+\item Disease-induced drop in population density decreases selection for virulence \citep{LenskiMay1994}
+\end{itemize}
+
+\end{frame}
+
+\begin{frame}
+\frametitle{Transient virulence}
+Selection differs between the \textbf{epidemic} and \textbf{endemic} phases of an outbreak \citepx{Frank1996,DayProulx2004a}
+\begin{description}
+  \pause
+\item[endemic phase] selection for per-generation
+offspring production: maximize $R_0$, $\beta N/(\alpha+\mu)$
+\pause 
+\item[epidemic phase] selection for per-unit-time offspring production:
+maximize $r$, $\beta N-(\alpha+\mu)$
+\end{description}
+\end{frame}
+\begin{frame}
+\frametitle{Transient emerging virulence}
+{\large When a parasite previously in eco-evolutionary
+equilibrium emerges in a new host population (at low density)
+it will show a transient peak in virulence as it spreads}
+
+\vskip10pt
+
+{\color{red} \Large How big is the peak? Does it matter?}
+
+\end{frame}
+
+
+\subsection{Toy model}
+
+\begin{frame}
+\frametitle{Model parameters}
+
+\begin{multicols}{2}
+%\begin{minipage}[t]{0.5\textwidth}
+\begin{tabular}{cl}
+  \textbf{Parameter} & \\%& \textbf{Units} \\
+\hline
+  %$\mu$ & Naturality mortality ($\equiv 1$) & $T^{-1}$ \\
+  %$N$ & Population size ($\equiv 1$) & --- \\
+  $c$ & Transmission \\
+  & scale \\ % & $T^{-1/\gamma}$ \\
+\hdashline
+  $\gamma$ & Transmission \\
+  & curvature \\% & --- \\
+\hline
+  %       &  evolvability & \\
+  $I(0)$ & Initial \\ 
+  & epidemic size \\ %& --- \\
+\hline
+  $V_g$  & Genetic variance  \\ %&  $[\alpha]^2 = T^{-2}$\\
+\end{tabular}
+%\end{minipage}%
+\columnbreak
+
+%\pause
+
+%\begin{minipage}[t]{0.5\textwidth}
+\begin{tabular}{cl}
+  \textbf{Alternative} & \\
+\hline
+    $\rzero^*$ & Equilibrium $\rzero$ \\ %& --- \\
+  & \\
+\hdashline
+    $\alpha^*$ & Equilibrium \\
+  & virulence \\ % & $T^{-1}$ \\
+\hline
+ $1/N_0$ & Inverse \\
+  & population size \\
+\hline
+\end{tabular}
+
+%\end{minipage}
+\end{multicols}
+
+% Assuming that a disease is at equilibrium,
+% we can express $\{c,\gamma\}$ as a function of $\{R_0,\alpha^*\}$,
+% and $I(0) \propto 1/N$
+\end{frame}
+
+\begin{frame}
+\frametitle{Example}
+<<sim1>>=
+params3 = c(h=5,c0=3,m=1,N=1,gamma=2)
+startvals = c(S=0.999,I=0.001,alpha=1)
+L1 = as.data.frame(lsoda(y=startvals,times=seq(0,30,by=0.1),
+      parms=params3,func=derivfun1))
+L1r = melt(L1,id.var="time")
+## xyplot(value~time|variable,data=L1r,type="l",scales=list(relation="free"))
+## plot(L1$time,L1$I,type="l")
+par(cex=1.5,lwd=2,bty="l",mar=c(5,4,2,4)+0.1,las=1)
+plot(L1$time,L1$I,xlab="Time",ylab="",type="l",axes=FALSE)
+mtext(side=2,line=3,cex=2,"Fraction infective",las=0)
+axis(side=2)
+axis(side=1,at=seq(0,30,by=10))
+box()
+text(7,0.1,adj=0,
+     expression(list(V[g]==5,c==3,I(0)==0.001,gamma==2)),cex=0.8)
+text(7,0.06,adj=0,col=4,
+     expression((list(R[0]^"*"==1.5,alpha^"*"==1,N==1000))),cex=0.8)
+par(new=TRUE)
+plot(L1$time,L1$alpha,axes=FALSE,xlab="",ylab="",col=2,type="l")
+axis(side=4,col.axis=2,col=2)
+mtext(side=4,at=1.5,line=3,expression(alpha),col=2,cex=2)
+@ 
+\end{frame}
+
+%% \begin{frame}
+%%   \frametitle{Response variables}
+
+%%   % \begin{itemize}
+%%   % \item Look for peak height (i.e., solve for $\frac{d\alpha}{dt}=0$)
+%%   % \item Reactivity analysis (maximum excursion from starting point,
+%%   %   for linear(ized) systems)
+%%   % \item{
+%%   \begin{itemize}
+%%   \item Peak height (virulence): \\
+%%     scaled by equilibrium virulence (no change=1)
+%%   \item Peak time: \\ 
+%%     \emph{ratio} of disease prevalence
+%%     at peak $\alpha$ to maximum prevalence
+%%   \end{itemize}
+%%   % }
+%%   % \end{itemize}
+%% \end{frame}
+
+% \begin{frame}
+%   \frametitle{Analysis?}
+
+%   \begin{itemize}
+%   \item Look for peak height (i.e., solve for $\frac{d\alpha}{dt}=0$)
+%   \item Reactivity analysis (maximum excursion from starting point,
+%     for linear(ized) systems)
+%   \item{Brute force:
+%       \begin{itemize}
+%       \item Peak height (virulence): scaled by equilibrium virulence (no change=1),
+%       as function of $R_0^*$, $\alpha^*$, $V_g$, $I(0)$
+%     \item Peak time: expressed as \emph{ratio} of disease prevalence
+%       at peak $\alpha$ to maximum prevalence
+%     \end{itemize}}
+% \end{itemize}
+% \end{frame}
+
+\begin{frame}
+  \frametitle{Response variables}
+  
+<<simpic3>>=
+params3 = c(h=5,c0=3,m=1,N=1,gamma=2)
+startvals = c(S=0.999,I=0.001,alpha=1)
+L1 = as.data.frame(lsoda(y=startvals,times=seq(0,30,by=0.1),
+      parms=params3,func=derivfun1))
+L1r = melt(L1,id.var="time")
+## xyplot(value~time|variable,data=L1r,type="l",scales=list(relation="free"))
+## plot(L1$time,L1$I,type="l")
+op <- par(cex=1.5,lwd=2,bty="l",mar=c(5,4,2,4)+0.1,las=1)
+plot(L1$time,L1$I,xlab="Time",ylab="",type="l",axes=FALSE)
+## mtext(side=2,line=3,cex=2,"Fraction infective",las=0)
+## axis(side=2)
+## axis(side=1,at=seq(0,30,by=10))
+box()
+par(new=TRUE)
+plot(L1$time,L1$alpha,axes=FALSE,xlab="",ylab="",col=2,type="l")
+## axis(side=4,col.axis=2,col=2)
+## mtext(side=4,at=1.5,line=3,expression(alpha),col=2,cex=2)
+ypk <- 2.122
+xpk <- 2.312
+ypk2 <- 1.09
+abline(v=xpk,lty=2,col=2)
+arrows(6,ypk,xpk,ypk,col=2,angle=15)
+u1 <- par("usr")[1]
+arrows(u1,ypk2,xpk,ypk2,angle=15)
+text(u1,ypk2,pos=2,"peak\ntime",xpd=NA)
+text(6,ypk+0.05,pos=4,expression(paste("peak height",(alpha))),col=2,xpd=NA)
+@
+\end{frame}
+
+\begin{frame}
+\frametitle{Peak height}
+<<peak1>>=
+maxa = as.data.frame.table(maxalpha.arr)
+maxa$R0=R0trans(as.numeric(as.character(maxa$R0)))
+maxa$alpha=log10(as.numeric(as.character(maxa$alpha)))
+maxa$h = factor(cvhvec[as.numeric(maxa$h)])
+maxa$I0 = factor(maxa$I0,levels=rev(levels(maxa$I0)))
+## levels(maxa$h)=paste("CV(h)=",levels(maxa$h),sep="")
+##levels(maxa$I0)=paste("I0=",levels(maxa$I0),sep="")
+R0labvec = c(1.1,2,5,10,50)
+R0atvec = R0trans(R0labvec)
+alphalabvec = c(1,10,100,1000)
+alphaatvec = log10(alphalabvec)
+colvec=heat.colors(100)
+## maxa$R0=factor(round(as.numeric(as.character(maxa$R0)),1))
+zvec = 2^2^seq(log2(log2(1.01)),log2(log2(6)),length=20)
+zvec = 2^seq(0,log2(max(maxa$Freq)),length=20)
+
+I0list <- vector("expression",0)
+for (i in 1:3) {
+  I0list <- c(I0list,substitute(~I(0)==10^z,
+                          list(z=round(log10(as.numeric(levels(maxa$I0)[i]))))))
+}
+CVglist <- vector("expression",0)
+for (i in 1:3) {
+  CVglist <- c(CVglist,substitute(~CV[g]==z,
+                          list(z=as.numeric(levels(maxa$h)[i]))))
+}
+zvec2 = seq(1,1.5,by=0.025)
+zvec = seq(1,4.5,by=0.5)
+
+newpanel=function(x,y,z,subscripts,at,...) {
+  ## browser()
+  ## panel.contourplot(x,y,z,subscripts,at,...)
+  panel.levelplot(x,y,z,subscripts,at,...)
+  if (current.row()==1) {  ## KLUGE -- are we in the bottom row?
+    ## add dashed, finely spaced contour lines
+    x <- as.numeric(x[subscripts])
+    y <- as.numeric(y[subscripts])
+    z <- z[subscripts]
+    ## cat(range(z),"\n")
+    ux <- sort(unique(x[!is.na(x)]))
+    uy <- sort(unique(y[!is.na(y)]))
+    idx <- match(x, ux)
+    idy <- match(y, uy)
+    m <- matrix(NA, nrow = length(ux), ncol = length(uy))
+    m[(idy - 1) * length(ux) + idx] <- z
+    clines <- contourLines(x = ux, y = uy, z = m, 
+                           nlevels = length(zvec2),
+                           levels=zvec2)
+    for (val in clines) {
+      llines(val,col=1,lty=2,lwd=1)
+      ## if so, put labels on dashed contour lines
+      slopes <- diff(val$y)/diff(val$x)
+      ## flat labels
+      textloc <- which.min(abs(slopes))
+      rotangle <- 0
+      i <- match(val$level, at)
+      ltext(lab = val$level,
+            adj = c(1, 0), 
+            srt = rotangle, 
+            cex=0.7,
+            x = 0.5 * (val$x[textloc] + val$x[textloc + 1]), 
+            y = 0.5 * (val$y[textloc] + val$y[textloc + 1]))
+    }
+  }
+}
+
+latticeExtra::useOuterStrips(levelplot(Freq~R0*alpha|I0*h,data=maxa,
+                                             contour=TRUE,
+                               col.regions=rev(colvec),
+                               at=zvec,
+                                             labels=list(cex=0.7),
+                               scales=list(x=list(at=R0atvec,labels=R0labvec),
+                                 y=list(at=alphaatvec,labels=alphalabvec)),
+                               ylab=expression(paste("Equilibrium virulence ",(alpha^"*"))),
+          xlab=expression(paste("Equilibrium transmission ",(R[0]^"*"))) ,
+                               panel=newpanel
+      ),
+      strip=strip.custom(
+        par.strip.text=list(lineheight=3),
+        factor.levels=I0list),
+      strip.left=strip.custom(
+        horizontal=FALSE,
+        factor.levels=CVglist))
+
+@ 
+\end{frame}
+
+%\begin{frame}
+%\frametitle{Peak timing}
+<<peaktime,fig.keep="none">>=
+maxt = as.data.frame.table(maxtime.arr)
+maxt$R0=R0trans(as.numeric(as.character(maxt$R0)))
+maxt$alpha=log10(as.numeric(as.character(maxt$alpha)))
+maxt$h = factor(cvhvec[as.numeric(maxt$h)])
+##levels(maxt$h)=paste("CV(h)=",levels(maxt$h),sep="")
+##levels(maxt$I0)=paste("I0=",levels(maxt$I0),sep="")
+##print(levelplot(Freq~R0*alpha|I0*h,data=maxt,
+colvec2=c("gray",heat.colors(8))
+print(latticeExtra::useOuterStrips(levelplot(Freq~R0*alpha|I0*h,data=maxt,
+                                             at=c(0.5,0.75,0.9,0.99,1.01),
+                                             contour=TRUE,
+                                             labels=list(cex=0.7),
+                                             col.regions=rev(colvec2),
+                                             ## at=plogis(-5:5),
+          scales=list(x=list(at=R0atvec,labels=R0labvec),
+            y=list(at=alphaatvec,labels=alphalabvec)),
+          ylab=expression(paste("Equilibrium virulence ",(alpha^"*"))),
+          xlab=expression(paste("Equilibrium ",R[0]^"*"))),
+                                   strip=strip.custom(
+                                     par.strip.text=list(lineheight=2.5),
+                                     factor.levels=I0list),
+                                   strip.left=strip.custom(
+                                     horizontal=FALSE,
+                                     factor.levels=CVglist)))
+@ 
+% \end{frame}
+
+%% \begin{frame}
+%% \frametitle{Relationships among parameters}
+
+%% \emph{Assuming} a power-law tradeoff
+%% curve, we can estimate the tradeoff curve from:
+%% \begin{description}
+%% \item[$R_0^*$]: (equilibrium)
+%% intrinsic reproductive number \\ hard
+%% to measure (but frequently attempted)
+%% \item[$\alpha^*$]: equilibrium virulence \\
+%% get a crude guess from the observed time to death \\
+%% (may be overestimated)
+%% \end{description}
+%% \end{frame}
+
+\begin{frame}
+\frametitle{Estimates for emerging pathogens}
+
+Order of magnitude estimates for some emerging high-virulence pathogens:
+\vskip10pt
+{\small
+\begin{tabular}{cccl}
+\textbf{Pathogen} &  $R_0^*$ & $\alpha^*$ & \textbf{Reference} \\
+% $c$ & $\gamma$ & \textbf{Reference} \\
+\hline
+SARS & 3 & 640 & \cite{Anderson+2004} \\ 
+% 3.02 & 1.001 & 
+West Nile  &  1.61--3.24 & 639 &  \cite{LewisWonham2004} \\
+HIV & 1.43 & 6.36 & \cite{VelascoHernandez+2002} \\
+% & 2.13 & 1.16 &  
+% & 1.62-3.27 & 1.001 
+myxomatosis & 3 & 5 &  \cite{Dwyer+1990}
+% 4.76 & 1.2 & 
+\end{tabular}
+}
+\end{frame}
+
+\begin{frame}
+\frametitle{Emerging pathogens: where are we?}
+$CV_g=0.5$, $I(0)=10^{-3}$ (middle panel):
+<<fig_params>>=
+r0vals = c(SARS=3,HIV=1.43,WNV=2,MYXO=3)
+avals =  c(SARS=640,HIV=6.36,WNV=639,MYXO=5)
+maxa2 = subset(maxa,as.numeric(h)==2 & as.numeric(I0)==2)
+print(levelplot(Freq~R0*alpha,data=maxa2,
+                contour=TRUE,
+                labels=list(cex=0.7),
+                col.regions=rev(colvec),
+                at=zvec,
+                scales=list(x=list(at=R0atvec,labels=R0labvec),
+                  y=list(at=alphaatvec,labels=alphalabvec)),
+                ylab=expression(paste("Equilibrium virulence ",(alpha^"*"))),
+                xlab=expression(R[0]),
+                panel=function(...) {
+                  panel.levelplot(...)
+                  panel.text(R0trans(r0vals),log10(avals),
+                             names(r0vals),
+                             ## substr(names(r0vals),1,1),
+                             cex=0.8)
+                }))
+@ 
+\end{frame}
+
+\subsection{Myxomatosis data}
+
+\begin{frame}
+\frametitle{Overview}
+
+\begin{itemize}
+\item Mosquito-borne viral disease of rabbits 
+\item Benign in South American rabbits, \\
+quickly fatal in European rabbits
+\item Well characterized \citepx{Fenner+1956,Dwyer+1990}
+\end{itemize}
+
+\end{frame}
+
+\begin{frame}
+\frametitle{Myxomatosis tradeoff curve}
+
+<<myxo0,echo=FALSE>>=
+## epidemic-phase optimum
+optvir = function(bfun,S,max=10) {
+  optimize(function(z) {bfun(z)*S-z},c(0,max),maximum=TRUE)$maximum
+}
+## equil. optimum
+optvir.eq = function(bfun,bdfun,m,interval=c(0.001,1)) {
+  f=function(z) {bfun(z)/(z+m)-bdfun(z)}
+  uniroot(f,interval=interval)$root
+}
+
+f1 = with(as.list(myxoparms1),function(z) beta(z,c0,gamma))
+f2 = with(as.list(myxoparms1),function(z) derivbeta(z,c0,gamma))
+m1 = optvir.eq(f1,f2,m=0.006)
+if (FALSE) {
+    with(as.list(myxoparms1),curve(beta(x,c0,gamma)/(x+m)-derivbeta(x,c0,gamma),
+                                   from=0.02,to=0.1))
+    with(as.list(myxoparms1),curve(beta(x,c0,gamma)-x,
+                                   from=0.02,to=20))
+    abline(h=0)
+    abline(v=m1A)
+}
+## analytical, numerical solutions for c0*alpha^(1/gamma)
+m1A = with(as.list(myxoparms1),m/gamma*1/(1-1/gamma)) ## analytical eq
+m2A = with(as.list(myxoparms1),(gamma/c0)^(1/(1/gamma-1))) ## analytical epi
+m2 =  optvir(bfun=f1,S=1,max=20)
+## numerical solutions for 'true' curve
+m4 = optvir(bfun=myxoz,S=1,max=20)
+m3 = optvir.eq(bfun=myxoz,bdfun=function(z)myxoz(z,1),
+  m=0.006)
+@ 
+
+<<myxo1,fig.keep="none">>=
+data(MyxoTiter_sum)
+myxo = MyxoTiter_sum
+pfun <- function(titer,min=0,max=1) {
+  pmin(max,pmax(0.293*titer-1.48,min))
+}
+
+Tfun <- function(cm) {
+  334.7-70.3*log(cm*100)
+}
+tot.trans <- function(cm) {
+  Tval <- Tfun(cm)
+  a <- predict(lm.a,newdata=list(cm0=cm))
+  b <- predict(lm.b,newdata=list(cm0=cm))
+  day <- 0:(round(Tval)-1)
+  titer <- a*day*exp(-b*day)
+  transm <- pfun(titer)
+  tot.transm <- sum(transm)
+  c(totbeta=tot.transm,T=Tval,avgbeta=tot.transm/Tval,a=a,b=b)
+}
+casemort <- c(I=(0.99+1)/2,II=(0.95+0.99)/2,III=(0.7+0.95)/2,IV=(0.5+0.7)/2,
+              V=(0+0.5)/2)
+casemort2 <- casemort
+casemort2 <- c(casemort2[1:2],c(IIIA=0.925,IIIB=0.8),casemort2[4:5])
+Tvals <- c(I=11,II=15,IIIA=20,IIIB=26,IV=40,V=118)
+
+avals <- c(coef(grick1)[1],coef(grick1)[1]+coef(grick1)[2:4])
+cm0 <- casemort[-2]
+## plot(cm0,avals,ylim=c(1,4),xlim=c(0,1))
+curve(myxoz(x)/(x+m),from=0.001,to=0.08,
+      xlab="Scaled virulence",
+      ylab="Total transmission",axes=FALSE,
+      xlim=c(0,0.09))
+lm.a <- lm(avals~cm0+I(cm0^2))
+acoef <- coef(lm.a)
+## curve(acoef[1]+acoef[2]*x+acoef[3]*x^2,add=TRUE)
+## curve(3.68-7.8*x+7.5*x^2,add=TRUE,lty=2)
+## text(cm0,avals+c(0.2,-0.2,0.2,0.2),names(cm0))
+bvals <- c(coef(grick1)[5],coef(grick1)[5]+coef(grick1)[6:8])
+## plot(cm0,bvals,ylim=c(0,0.3),xlim=c(0,1))
+lm.b <- lm(bvals~cm0+I(cm0^2))
+
+cmvec <- seq(0.01,0.99,by=0.01)
+vals <- t(sapply(cmvec,tot.trans))
+z <- splinefun(1/vals[,"T"],vals[,"avgbeta"])
+## calculate intersection/equivalent curve
+m <- 0.006
+u1 <- uniroot(function(x) z(x,1)-z(x)/(x+m),interval=c(0.01,0.04))
+## zero-mortality case
+u2 <- uniroot(function(x) z(x,1)-z(x)/(x),interval=c(0.01,0.04))
+abline(v=u1$root)
+abline(v=u2$root,lty=2)
+pos <- u1$root
+val <- z(u1$root)
+sl <- z(u1$root,1)
+gam <- val/(pos*sl)
+c0 <- val*pos^(-1/gam)
+
+## grick1 <- gnls(titer~a*day*exp(-b*day),
+##               start=c(rep(10,4),rep(0.015,4)),
+##               params=a+b~factor(grade),data=myxo)
+@ 
+
+<<myxotrade>>=
+par(mar=c(5,4,1,1),las=1,bty="l",lwd=2,
+    mgp=c(2.5,1,0),cex=1.5)  ## cex=1.5 too complicated?
+## curve(z(x),from=0,to=0.08,
+##       xlab="Scaled virulence",
+##       ylab="Average transmission rate",
+##       xlim=c(-m,0.09),axes=FALSE)
+## axis(side=2)
+## sc_a_vals = seq(0,12,by=2)
+## axis(side=1,at=sc_a_vals*m,labels=sc_a_vals)
+## box()
+## points(-m,0)
+## curve(c0*x^(1/gam),add=TRUE,col=2,from=0,to=0.04)
+## axis(side=3,at=1/Tfun(casemort2),
+##      label=names(casemort2))
+## abline(a=m*sl,b=sl,lty=2,col=4)
+## text(0.008,0.462,expression(list(c==0.056,gamma==1.2)),col=2,
+##      cex=0.7
+curve(z(x),
+      from=0.001,to=0.08,
+      xlab="Scaled virulence",
+      ylab="Total transmission",axes=FALSE,
+      xlim=c(0,0.09),      ylim=c(0,0.75))
+par(xpd=NA)
+par(cex.main=1)
+avec <- seq(0,0.08,length=101)
+polygon(c(avec,rev(avec)),
+        c(zenv2[,1],rev(zenv2[,2])),
+        col="gray",border=NA)
+## title(main=list("Myxomatosis"))
+par(xpd=FALSE)
+curve(z(x),from=0.001,to=0.08,add=TRUE)
+curve(c0*x^(1/gam),from=0,add=TRUE,col=2)
+sc_a_vals = seq(0,12,by=2)
+axis(side=1,at=sc_a_vals*m,labels=sc_a_vals)
+axis(side=2)
+## axis(side=3,at=1/Tfun(casemort2),
+##     label=names(casemort2))
+abline(v=c(m1,m2A,m4),lty=1,col=c(1,1,4))
+text(m1,0,"eq",pos=2)
+text(m4,0,"epi",pos=4,col=4)
+text(12,10,pos=3,expression(c*alpha^{1/gamma}/(alpha+mu)),col=2)
+box()
+## par(xpd=NA)
+## corner.label("a",cex=1.5)
+## par(xpd=FALSE)
+##
+## par(mar=c(5,4,1,1)+0.1)
+## plot(newalpha1,x$Spores,xlim=c(0,max(newalpha1)),
+##      xlab="Scaled virulence",
+##      ylab=expression(paste("Total spores",({}%*%10^6))))
+## newalpha=(1/newdays2)/meanmu
+## lines(newalpha,vals2$fit)
+## matlines(newalpha,(vals2$fit+outer(vals2$se.fit,c(-1,1))),lty=2,
+##          col=1)
+## with(jensendat,plot(newalpha1,Spores/Days,xlim=c(0,max(newalpha1)),
+##       xlab="Scaled virulence",ylab=""))
+## mtext(side=2,line=2.8,expression(paste("Spores/day ",({}%*%10^6))),
+##      las=0,cex=0.7)
+## title(main=list("Pasteuria ramosa",font=4))
+##corner.label("b",cex=1.5)
+##  newalpha=(1/newdays2)/meanmu
+##  lines(newalpha,vals2$fit/newdays2)
+##  matlines(newalpha,(vals2$fit+outer(vals2$se.fit,c(-1,1)))/newdays2,lty=2,
+##          col=1)
+@ 
+\end{frame}
+
+%\begin{frame}
+%\frametitle{Tradeoff curve: myxomatosis \citepx{Dwyer+1990}}
+
+<<echo=FALSE,fig.keep="none">>=
+par(mar=c(5,4,3,1),cex=1.5,lwd=2,las=1,bty="l",
+    mgp=c(2.75,1,0))
+curve(z(x),from=0,to=0.08,
+      xlab="Scaled virulence",
+      ylab="Average transmission",
+      xlim=c(-m,0.09),axes=FALSE)
+axis(side=2)
+sc_a_vals = seq(0,12,by=2)
+axis(side=1,at=sc_a_vals*m,labels=sc_a_vals)
+box()
+points(-m,0)
+curve(c0*x^(1/gam),add=TRUE,col=2,from=0,to=0.04)
+axis(side=3,at=1/Tfun(casemort2),
+     label=names(casemort2))
+abline(a=m*sl,b=sl,lty=2,col=4)
+text(0.008,0.462,expression(list(c==0.056,gamma==1.2)),col=2,
+     cex=0.7)
+@ 
+%\end{frame}
+
+% myxo stuff
+<<echo=FALSE>>=
+gradepct = matrix(c(100,13.3,0.7,1.7,0.7,0,0.6,1.9,
+  0,20,5.3, 11.1,0.3,0,4.6,3.3,
+  0,53.3,54.6,60.6,63.7,62.4,74.1,67.0,
+  0,13.3,24.1,21.8,34.0,35.8,20.7,27.8,
+  0,0,15.5,4.7,1.3,1.7,0,0),nrow=8)
+##barplot(t(gradepct))
+casemortstr = c(">99","95-99","70-95","50-70","<50")
+survtimestr = c("<13","14-16","17-28","29-50",">50")
+grade = c("I","II","III","IV","V")
+periodstr = c("1950-1951","1952-1955","1955-1958","1959-1963",
+  "1964-1966","1967-1969","1970-1974","1975-1981")
+dimnames(gradepct) = list(period=periodstr,virgrade=grade)
+## averages -- is this right???
+survtime = c(6.5,15,22.5,39.5,60)
+
+nsamp=c(NA,60,432,449,306,229,174,212)
+## alpha = inverse survival time
+alpha = 1/survtime
+## translate alpha to units of HOST MORTALITY RATE (??)
+# natural mortality from 0.004 to 0.0085 per capita per day
+## say 0.006
+## so alpha (in days)/natural mortality (0.006)
+## varies from 2.7 to 25.6 [VERY CRUDE but plausible?]
+mu = 0.006
+alpha2 = alpha/mu  
+alphamean = rowSums(sweep(gradepct/100,2,alpha2,"*"))
+alphavar = rowSums(sweep(gradepct/100,2,alpha2,"*"))
+## rowSums(gradepct) ## check normalization
+## calculate variance:
+alpha3 = outer(alphamean,alpha2,"-")
+alphavar = rowSums(gradepct/100*alpha3^2)
+alpha.cv = sqrt(alphavar)/alphamean
+@ 
+
+<<echo=FALSE>>=
+hvec = c(10,2.5,40)
+mval = 4.5
+cvs = sqrt(hvec)/mval
+myxoparms2=myxoparms1
+m = 0.006
+myxoparms2["h"] = hvec[1]*m^2
+L1 = as.data.frame(lsoda(y=c(S=0.99,I=0.01,alpha=0.15),
+  times=seq(0,2*3650,by=30),
+  parms=myxoparms2,func=derivfun1))
+periods=matrix(unlist(lapply(strsplit(periodstr,"-"),as.numeric)),
+  ncol=2,byrow=TRUE)
+L2 = as.data.frame(lsoda(y=c(S=0.99,I=0.01,alpha=0.027),
+  times=seq(0,2*3650,by=30),
+  parms=myxoparms2,func=derivfun1))
+myxoparms3 = myxoparms1
+myxoparms3["h"] = hvec[2]*m^2
+L1b = as.data.frame(lsoda(y=c(S=0.99,I=0.01,alpha=0.15),
+  times=seq(0,2*3650,by=30),
+  parms=myxoparms3,func=derivfun1))
+periods=matrix(unlist(lapply(strsplit(periodstr,"-"),as.numeric)),
+  ncol=2,byrow=TRUE)
+L2b = as.data.frame(lsoda(y=c(S=0.99,I=0.01,alpha=0.027),
+  times=seq(0,2*3650,by=30),
+  parms=myxoparms3,func=derivfun1))
+myxoparms3["h"] = hvec[3]*m^2
+L1c = as.data.frame(lsoda(y=c(S=0.99,I=0.01,alpha=0.15),
+  times=seq(0,2*3650,by=30),
+  parms=myxoparms3,func=derivfun1))
+periods=matrix(unlist(lapply(strsplit(periodstr,"-"),as.numeric)),
+  ncol=2,byrow=TRUE)
+L2c = as.data.frame(lsoda(y=c(S=0.99,I=0.01,alpha=0.027),
+  times=seq(0,2*3650,by=30),
+  parms=myxoparms3,func=derivfun1))
+@ 
+
+<<no,eval=FALSE>>=
+## plot with both equil-start and true-start
+par(cex=2,lwd=2,bty="l",mar=c(5,4,2,4)+0.1,las=1)
+plot(periods[,1],alphamean,type="n",ylim=c(0,27),
+     xlim=c(1950,1970),xlab="Scaled virulence",
+     ylab="Date",axes=FALSE)
+axis(side=2)
+axis(side=1,at=seq(1950,1980,10))
+segments(periods[,1],alphamean,periods[,2],alphamean,lwd=7,
+         col="gray")
+box()
+lines(1950.5+(L1$time/365),L1$alpha/0.006)
+lines(1950.5+(L2$time/365),L2$alpha/0.006,lty=3)
+lines(1950.5+(L2c$time/365),L2c$alpha/0.006,col=2,lty=3)
+lines(1950.5+(L1c$time/365),L1c$alpha/0.006,col=2)
+lines(1950.5+(L2b$time/365),L2b$alpha/0.006,col=4,lty=3)
+lines(1950.5+(L1b$time/365),L1b$alpha/0.006,col=4)
+abline(h=0.027/0.006,lty=2)
+@ 
+
+\begin{frame}
+\frametitle{Estimating evolvability ($V_g$)}
+
+\begin{itemize}
+\item Key parameter: genetic variance in virulence (evolvability) \pause
+\item Despite case studies of rapid pathogen evolution:
+\begin{itemize}
+\item myxomatosis \citepx{Dwyer+1990}
+\item syphilis \citepx{Knell2004}
+\item serial passage experiments \citepx{Ebert1998}
+\item \emph{Plasmodium chabaudi} \citepx{MackinnonRead1999b}
+\end{itemize}
+we rarely have enough information to estimate $V_g$
+\pause
+\item Only (?) for myxomatosis do we know
+the variation in virulence among circulating strains
+\end{itemize}
+\end{frame}
+
+\begin{frame}
+\frametitle{Myxomatosis grades vs. time}
+<<myxovar1,fig.height=4.5,out.width="0.9\\textwidth">>=
+par(las=1)
+avgyr = round(colMeans(sapply(strsplit(rownames(gradepct),"-"),
+  as.numeric)))
+b=barplot(t(gradepct)/100,beside=TRUE,names.arg=avgyr,
+  xlab="Proportion")
+legend("topright",fill=grey.colors(5),
+       colnames(gradepct),ncol=5,title="Virulence grade")
+##locs = b[3,]
+##mtext(side=1,at=locs,text=rownames(gradepct),cex=0.7)
+@ 
+\end{frame}
+
+\begin{frame}
+\frametitle{Myxomatosis variance vs. time}
+<<myxovar>>=
+par(cex=1.5,lwd=1.5,bty="l",mar=c(5,4,2,4)+0.1,las=1)
+plot(periods[,1],alphavar,type="n",
+     xlim=c(1950,1970),ylab=expression(paste("Genetic variance ",(V[g]))),
+     xlab="Date",axes=FALSE)
+axis(side=2)
+axis(side=1,at=seq(1950,1980,10))
+segments(periods[,1],alphavar,periods[,2],alphavar,lwd=7,
+         col="gray")
+abline(h=hvec,col=c(1,4,2))
+par(xpd=NA)
+text(rep(1970.5,3),hvec,paste("Vg=",hvec),col=c(1,4,2),pos=4)
+par(xpd=FALSE)
+@ 
+\end{frame}
+
+
+<<myxomisc0,echo=FALSE>>=
+hvec = c(10,2.5,40)
+mval = 4.5
+cvs = sqrt(hvec)/mval
+myxoparms2=myxoparms1
+m = 0.006
+myxoparms2["h"] = hvec[1]*m^2
+L1 = as.data.frame(lsoda(y=c(S=0.99,I=0.01,alpha=0.15),
+  times=seq(0,2*3650,by=30),
+  parms=myxoparms2,func=derivfun1))
+L1z = as.data.frame(lsoda(y=c(S=0.99,I=0.01,alpha=0.15),
+  times=seq(0,2*3650,by=30),
+  parms=myxoparms2,func=myxoderiv3))
+periods=matrix(unlist(lapply(strsplit(periodstr,"-"),as.numeric)),
+  ncol=2,byrow=TRUE)
+L2 = as.data.frame(lsoda(y=c(S=0.99,I=0.01,alpha=0.027),
+  times=seq(0,2*3650,by=30),
+  parms=myxoparms2,func=derivfun1))
+L2z = as.data.frame(lsoda(y=c(S=0.99,I=0.01,alpha=0.027),
+  times=seq(0,2*3650,by=30),
+  parms=myxoparms2,func=myxoderiv3))
+myxoparms3 = myxoparms1
+myxoparms3["h"] = hvec[2]*m^2
+L1b = as.data.frame(lsoda(y=c(S=0.99,I=0.01,alpha=0.15),
+  times=seq(0,2*3650,by=30),
+  parms=myxoparms3,func=derivfun1))
+L1bz = as.data.frame(lsoda(y=c(S=0.99,I=0.01,alpha=0.15),
+  times=seq(0,2*3650,by=30),
+  parms=myxoparms3,func=myxoderiv3))
+periods=matrix(unlist(lapply(strsplit(periodstr,"-"),as.numeric)),
+  ncol=2,byrow=TRUE)
+L2b = as.data.frame(lsoda(y=c(S=0.99,I=0.01,alpha=0.027),
+  times=seq(0,2*3650,by=30),
+  parms=myxoparms3,func=derivfun1))
+L2bz = as.data.frame(lsoda(y=c(S=0.99,I=0.01,alpha=0.027),
+  times=seq(0,2*3650,by=30),
+  parms=myxoparms3,func=myxoderiv3))
+myxoparms3["h"] = hvec[3]*m^2
+L1c = as.data.frame(lsoda(y=c(S=0.99,I=0.01,alpha=0.15),
+  times=seq(0,2*3650,by=30),
+  parms=myxoparms3,func=derivfun1))
+L1cz = as.data.frame(lsoda(y=c(S=0.99,I=0.01,alpha=0.15),
+  times=seq(0,2*3650,by=30),
+  parms=myxoparms3,func=myxoderiv3))
+periods=matrix(unlist(lapply(strsplit(periodstr,"-"),as.numeric)),
+  ncol=2,byrow=TRUE)
+L2c = as.data.frame(lsoda(y=c(S=0.99,I=0.01,alpha=0.027),
+  times=seq(0,2*3650,by=30),
+  parms=myxoparms3,func=derivfun1))
+L2cz = as.data.frame(lsoda(y=c(S=0.99,I=0.01,alpha=0.027),
+  times=seq(0,2*3650,by=30),
+  parms=myxoparms3,func=myxoderiv3))
+
+@ 
+
+%\begin{frame}
+%\frametitle{Myxomatosis virulence dynamics: 1}
+<<myxomisc1,eval=FALSE>>=
+par(cex=2,lwd=2,bty="l",las=1,mgp=c(2.75,1,0),
+    mar=c(4,4,2,1))
+plot(periods[,1],alphamean,type="n",ylim=c(0,27),
+     xlim=c(1950,1970),ylab="Scaled virulence",
+     xlab="Date",axes=FALSE)
+axis(side=2)
+axis(side=1,at=seq(1950,1980,10))
+segments(periods[,1],alphamean,periods[,2],alphamean,lwd=7,
+         col="darkgray")
+box()
+lines(1950.5+(L1$time/365),L1$alpha/0.006)
+lines(1950.5+(L1c$time/365),L1c$alpha/0.006,col=2)
+lines(1950.5+(L1b$time/365),L1b$alpha/0.006,col=4)
+lines(1950.5+(L1z$time/365),L1z$alpha/0.006,col=1,lty=2)
+lines(1950.5+(L1cz$time/365),L1cz$alpha/0.006,col=2,lty=2)
+lines(1950.5+(L1bz$time/365),L1bz$alpha/0.006,col=4,lty=2)
+
+abline(h=0.027/0.006,lty=2)
+rect(par("usr")[1],par("usr")[3],1955,15,border="darkgray",lty=2)
+text(c(1959.5,1956.2,1953),
+     c(19.4,11.3,4),
+     paste("Vg=",c(2.5,10,40),sep=""),
+     col=c(4,1,2),
+     pos=c(4,4,2),
+     offset=0.2,cex=0.6)
+box()
+@ 
+%\end{frame}
+
+
+%% \begin{frame}
+%% \frametitle{Virulence simulation, myxomatosis}
+<<myxosimplot,eval=FALSE>>=
+ltys=1:2
+cols=c(1,2,4)
+## par(mfrow=c(1,2),oma=c(0,0,3,0))
+par(cex=1.5,lwd=2,bty="l",las=1,mgp=c(2.75,1,0),
+    mar=c(4,4,2,1))
+plot(periods[,1],alphamean,type="n",ylim=c(0,27),
+     xlim=c(1950,1970),ylab="Scaled virulence",
+     xlab="Date",axes=FALSE)
+axis(side=2)
+axis(side=1,at=seq(1950,1980,10))
+## abline(h=0.027/0.006,lty=2)
+##rect(par("usr")[1],par("usr")[3],1955,15,border="darkgray",lty=2)
+rect(par("usr")[1],par("usr")[3],1955,15,
+     col=gray(0.95),lty=2,border=NA)
+segments(periods[,1],alphamean,periods[,2],alphamean,lwd=7,
+         col="darkgray")
+box()
+lines(1950.5+(L1$time/365),L1$alpha/0.006,col=cols[1],lty=ltys[1])
+lines(1950.5+(L1c$time/365),L1c$alpha/0.006,col=cols[3],lty=ltys[1])
+lines(1950.5+(L1b$time/365),L1b$alpha/0.006,col=cols[2],lty=ltys[1])
+lines(1950.5+(L1z$time/365),L1z$alpha/0.006,col=cols[1],lty=ltys[2])
+lines(1950.5+(L1cz$time/365),L1cz$alpha/0.006,col=cols[3],lty=ltys[2])
+lines(1950.5+(L1bz$time/365),L1bz$alpha/0.006,col=cols[2],lty=ltys[2])
+##text(c(1959.5,1956.2,1954),
+##      c(19.4,11.3,8),
+##      paste("h=",c(2.5,10,40),sep=""),
+##      lty=ltys,
+##      ## col=c(4,1,2),
+##      pos=c(4,4,2),
+##      offset=0.2,cex=0.6)
+par(xpd=NA)
+legend(1951,37,cex=0.8,ncol=2,bty="n",
+       col=rep(c(2,1,4),2),
+       lty=rep(1:2,each=3),
+       outer(paste("Vg=",c(2.5,10,40),sep=""),
+             c("power","realistic"),paste,sep=", "))                 
+par(xpd=FALSE)
+##box()
+##corner.label("a")
+####
+@ 
+%% \end{frame}
+
+%\begin{frame}
+%\frametitle{Virulence dynamics: myxomatosis (2)}
+%\begin{center}
+<<myxosimplot2,eval=FALSE>>=
+par(cex=1.5,lwd=2,bty="l",las=1,mgp=c(2.75,1,0),
+    mar=c(4,4,2,1))
+plot(periods[,1],alphamean,type="n",ylim=c(0,15),
+     xlim=c(1950,1955),ylab="",
+     xlab="Date",axes=FALSE)
+axis(side=2)
+axis(side=1,at=c(1950,1955))
+segments(periods[,1],alphamean,periods[,2],alphamean,lwd=7,
+         col="darkgray")
+box()
+col2 = "darkgray"
+lines(1950.5+(L2$time/365),L2$alpha/0.006,col=cols[1])
+lines(1950.5+(L2c$time/365),L2c$alpha/0.006,col=cols[3])
+lines(1950.5+(L2b$time/365),L2b$alpha/0.006,col=cols[2])
+lines(1950.5+(L2z$time/365),L2z$alpha/0.006,col=cols[1],lty=ltys[2])
+lines(1950.5+(L2cz$time/365),L2cz$alpha/0.006,col=cols[3],lty=ltys[2])
+lines(1950.5+(L2bz$time/365),L2bz$alpha/0.006,col=cols[2],lty=ltys[2])
+abline(h=0.027/0.006,lty=2)
+## par(xpd=NA)
+## text(c(1950.85,1952.5,1954.5),
+## c(12.11,5.86,5.62),
+##  paste("h=",c(40,10,2.5),sep=""),
+##   pos=4,offset=0.01,cex=0.6)
+## par(xpd=FALSE)
+## corner.label("b")
+##legend("topright",paste("h=",c(40,10,2.5),sep=""),
+## col=c(2,1,4),
+##lty=ltys[c(1,3,2)],lwd=2,bty="n",cex=0.5)
+legend(1951,37,cex=0.8,ncol=2,bty="n",
+       col=rep(c(2,1,3),2),
+       lty=rep(1:2,each=3),
+       outer(paste("Vg=",c(2.5,10,40),sep=""),
+             c("power","realistic"),paste,sep=", "))                 
+@ 
+%\end{center}
+%\end{frame}
+
+%\begin{frame}
+%\frametitle{Myxomatosis virulence dynamics: 2}
+<<myxomisc3,eval=FALSE,fig.height=5>>=
+par(cex=2,lwd=2,bty="l",las=1,mgp=c(2.75,1,0),
+    mar=c(4,4,2,1))
+plot(periods[,1],alphamean,type="n",ylim=c(0,15),
+     xlim=c(1950,1955),ylab="Scaled virulence",
+     xlab="Date",axes=FALSE)
+axis(side=2)
+axis(side=1,at=c(1950,1955))
+segments(periods[,1],alphamean,periods[,2],alphamean,lwd=7,
+         col="darkgray")
+box()
+lines(1950.5+(L2$time/365),L2$alpha/0.006,lty=1)
+lines(1950.5+(L2c$time/365),L2c$alpha/0.006,col=2,lty=1)
+lines(1950.5+(L2b$time/365),L2b$alpha/0.006,col=4,lty=1)
+lines(1950.5+(L2z$time/365),L2z$alpha/0.006,col=1,lty=2)
+lines(1950.5+(L2cz$time/365),L2cz$alpha/0.006,col=2,lty=1)
+lines(1950.5+(L2bz$time/365),L2bz$alpha/0.006,col=4,lty=1)
+abline(h=0.027/0.006,lty=2)
+legend("topright",paste("Vg=",c(40,10,2.5),sep=""),
+       col=c(2,1,4),lty=1,lwd=2,bty="n",cex=0.5)
+@ 
+%\end{frame}
+
+
+
+\begin{frame}
+\frametitle{Myxomatosis virulence dynamics: power-law tradeoff}
+<<myxosim1,fig.keep="none">>=
+par(cex=1.5,lwd=2,bty="l",las=1,mgp=c(2.5,1,0),
+    mar=c(4,4,2,1))
+plot(periods[,1],alphamean,type="n",ylim=c(0,27),
+     xlim=c(1950,1970),ylab="Scaled virulence",
+     xlab="Date",axes=FALSE)
+axis(side=2)
+axis(side=1,at=seq(1950,1980,10))
+segments(periods[,1],alphamean,periods[,2],alphamean,lwd=7,
+         col="darkgray")
+abline(h=0.027/0.006,lty=2)
+rect(par("usr")[1],par("usr")[3],1955,15,border="darkgray",lty=2)
+box()
+@ 
+<<myxosim2>>=
+<<myxosim1>>
+lines(1950.5+(L1$time/365),L1$alpha/0.006,lwd=2)
+lines(1950.5+(L1c$time/365),L1c$alpha/0.006,col=2,lwd=2)
+lines(1950.5+(L1b$time/365),L1b$alpha/0.006,col=4,lwd=2)
+text(c(1959.5,1956.2,1953),
+     c(19.4,11.3,6),
+     paste("h=",c(2.5,10,40),sep=""),
+     col=c(4,1,2),
+     pos=c(4,4,2),
+     offset=0.2,cex=0.6)
+@ 
+\end{frame}
+
+\begin{frame}
+\frametitle{Myxomatosis virulence dynamics: realistic tradeoff}
+<<myxosim3,fig>>=
+<<myxosim1>>
+aval <- 0.2
+lines(1950.5+(L1$time/365),L1$alpha/0.006,lwd=2,col=rgb(0,0,0,aval))
+lines(1950.5+(L1c$time/365),L1c$alpha/0.006,col=rgb(1,0,0,aval),lwd=2)
+lines(1950.5+(L1b$time/365),L1b$alpha/0.006,col=rgb(0,0,1,aval),lwd=2)
+lines(1950.5+(L1z$time/365),L1z$alpha/0.006,col=1)
+lines(1950.5+(L1cz$time/365),L1cz$alpha/0.006,col=2)
+lines(1950.5+(L1bz$time/365),L1bz$alpha/0.006,col=4)
+text(c(1951,1952,1953.5),
+     c(3,6.2,8.5),
+     paste("h=",rev(c(2.5,10,40)),sep=""),
+     col=rev(c(4,1,2)),
+     cex=0.6)
+
+@ 
+\end{frame}
+
+
+%\begin{frame}
+%\frametitle{Virulence simulation, myxomatosis}
+%\begin{center}
+<<myxomisc4,echo=FALSE,fig.keep="none">>=
+ltys=1:2
+cols=c(1,2,4)
+## par(mfrow=c(1,2),oma=c(0,0,3,0))
+par(cex=1.5,lwd=2,bty="l",las=1,mgp=c(2.5,1,0),
+    mar=c(4,4,2,1))
+plot(periods[,1],alphamean,type="n",ylim=c(0,27),
+     xlim=c(1950,1970),ylab="Scaled virulence",
+     xlab="Date",axes=FALSE)
+axis(side=2)
+axis(side=1,at=seq(1950,1980,10))
+## abline(h=0.027/0.006,lty=2)
+##rect(par("usr")[1],par("usr")[3],1955,15,border="darkgray",lty=2)
+rect(par("usr")[1],par("usr")[3],1955,15,
+col=gray(0.95),lty=2,border=NA)
+segments(periods[,1],alphamean,periods[,2],alphamean,lwd=7,
+         col="darkgray")
+box()
+lines(1950.5+(L1$time/365),L1$alpha/0.006,col=cols[1],lty=ltys[1])
+lines(1950.5+(L1c$time/365),L1c$alpha/0.006,col=cols[3],lty=ltys[1])
+lines(1950.5+(L1b$time/365),L1b$alpha/0.006,col=cols[2],lty=ltys[1])
+lines(1950.5+(L1z$time/365),L1z$alpha/0.006,col=cols[1],lty=ltys[2])
+lines(1950.5+(L1cz$time/365),L1cz$alpha/0.006,col=cols[3],lty=ltys[2])
+lines(1950.5+(L1bz$time/365),L1bz$alpha/0.006,col=cols[2],lty=ltys[2])
+##text(c(1959.5,1956.2,1954),
+##      c(19.4,11.3,8),
+##      paste("h=",c(2.5,10,40),sep=""),
+##      lty=ltys,
+##      ## col=c(4,1,2),
+##      pos=c(4,4,2),
+##      offset=0.2,cex=0.6)
+par(xpd=NA)
+legend(1951,37,cex=0.8,ncol=2,bty="n",
+       col=rep(c(2,1,3),2),
+       lty=rep(1:2,each=3),
+       outer(paste("h=",c(2.5,10,40),sep=""),
+             c("power","realistic"),paste,sep=", "))                 
+par(xpd=FALSE)
+##box()
+##corner.label("a")
+####
+@ 
+%\end{center}
+%\end{frame}
+
+%\begin{frame}
+%\frametitle{Virulence dynamics: myxomatosis (2)}
+%\begin{center}
+<<myxomix5,echo=FALSE,fig.keep="none">>=
+par(cex=2,lwd=2,bty="l",las=1,mgp=c(2.75,1,0),
+    mar=c(4,4,2,1))
+plot(periods[,1],alphamean,type="n",ylim=c(0,15),
+     xlim=c(1950,1955),ylab="",
+     xlab="Date",axes=FALSE)
+axis(side=2)
+axis(side=1,at=c(1950,1955))
+segments(periods[,1],alphamean,periods[,2],alphamean,lwd=7,
+         col="darkgray")
+box()
+col2 = "darkgray"
+lines(1950.5+(L2$time/365),L2$alpha/0.006,col=cols[1])
+lines(1950.5+(L2c$time/365),L2c$alpha/0.006,col=cols[3])
+lines(1950.5+(L2b$time/365),L2b$alpha/0.006,col=cols[2])
+lines(1950.5+(L2z$time/365),L2z$alpha/0.006,col=cols[1],lty=ltys[2])
+lines(1950.5+(L2cz$time/365),L2cz$alpha/0.006,col=cols[3],lty=ltys[2])
+lines(1950.5+(L2bz$time/365),L2bz$alpha/0.006,col=cols[2],lty=ltys[2])
+abline(h=0.027/0.006,lty=2)
+## par(xpd=NA)
+## text(c(1950.85,1952.5,1954.5),
+## c(12.11,5.86,5.62),
+##  paste("h=",c(40,10,2.5),sep=""),
+##   pos=4,offset=0.01,cex=0.6)
+## par(xpd=FALSE)
+## corner.label("b")
+##legend("topright",paste("h=",c(40,10,2.5),sep=""),
+## col=c(2,1,4),
+##lty=ltys[c(1,3,2)],lwd=2,bty="n",cex=0.5)
+legend(1951,37,cex=0.8,ncol=2,bty="n",
+       col=rep(c(2,1,3),2),
+       lty=rep(1:2,each=3),
+       outer(paste("h=",c(2.5,10,40),sep=""),
+             c("power","realistic"),paste,sep=", "))                 
+@ 
+%\end{center}
+%\end{frame}
+
+\begin{frame}
+\frametitle{Myxo virulence: equilibrium start, power-law tradeoff}
+<<myxosim4,echo=FALSE,fig.keep="none">>=
+par(cex=2,lwd=2,bty="l",las=1,mgp=c(2.75,1,0),
+    mar=c(4,4,2,1))
+plot(periods[,1],alphamean,type="n",ylim=c(0,15),
+     xlim=c(1950,1955),ylab="Scaled virulence",
+     xlab="Date",axes=FALSE)
+axis(side=2)
+axis(side=1,at=c(1950,1955))
+segments(periods[,1],alphamean,periods[,2],alphamean,lwd=7,
+         col="darkgray")
+box()
+abline(h=0.027/0.006,lty=2)
+legend("topright",paste("h=",c(40,10,2.5),sep=""),
+       col=c(2,1,4),lty=1,lwd=2,bty="n",cex=0.5)
+@ 
+
+<<myxosim5>>=
+<<myxosim4>>
+lines(1950.5+(L2$time/365),L2$alpha/0.006,lty=1)
+lines(1950.5+(L2c$time/365),L2c$alpha/0.006,col=2,lty=1)
+lines(1950.5+(L2b$time/365),L2b$alpha/0.006,col=4,lty=1)
+@ 
+\end{frame}
+
+\begin{frame}
+  \frametitle{Myxo virulence: equilibrium start, realistic tradeoff}
+<<myxosim6>>=
+<<myxosim4>>
+lines(1950.5+(L2$time/365),L2$alpha/0.006,lty=1,col=rgb(0,0,0,aval))
+lines(1950.5+(L2c$time/365),L2c$alpha/0.006,lty=1,col=rgb(1,0,0,aval))
+lines(1950.5+(L2b$time/365),L2b$alpha/0.006,lty=1,col=rgb(0,0,1,aval))
+lines(1950.5+(L2z$time/365),L2z$alpha/0.006,col=1,lty=1)
+lines(1950.5+(L2cz$time/365),L2cz$alpha/0.006,col=2,lty=1)
+lines(1950.5+(L2bz$time/365),L2bz$alpha/0.006,col=4,lty=1)
+@ 
+\end{frame}
+
+%% JENSEN et al data
+<<jensendat,echo=FALSE,warning=FALSE>>=
+jensendat = read.table("data/jensen-fig.dat")
+names(jensendat) =c("Days","Spores")
+jensendat$Days = round(jensendat$Days)
+jensendat$Spores = pmax(0,jensendat$Spores)
+g1 = glm(Spores~poly(Days,2),family=quasipoisson,data=jensendat)
+newdays = seq(min(jensendat$Days),max(jensendat$Days),length.out=100)
+vals = predict(g1,newdata=data.frame(Days=newdays),type="response")
+##plot(jensendat$Days,jensendat$Spores)
+##lines(newdays,vals)
+g0 = glm(Spores~Days,family=quasipoisson,data=jensendat)
+## anova(g0,g1,test="F")
+newdays2 = 1/seq(0.001,0.05,length=100)
+vals2 = predict(g1,newdata=data.frame(Days=newdays2),type="response",
+  se.fit=TRUE)
+## mean longevity APPROX 130 days
+meanmu = 1/130
+newalpha1 = (1/jensendat$Days)/meanmu
+@ 
+
+<<hivdat,cache,warning=FALSE,message=FALSE>>=
+## duration, taken from Fraser et al 2007 fig 1
+d <- read.table("data/fraser-VL.dat",header=TRUE)
+library(plotrix)
+## with(d,plotCI(10^logVL,meanval,ui=upper,li=lower,pch=16,
+##               log="x"))
+f <- read.csv("data/fraser-TP.csv")
+## with(f,plotCI(VL,TP_Best,uiw=CI.upper,liw=CI.lower,pch=16,
+##              log="x"))
+dsp <- with(d,splines::interpSpline(logVL,meanval))
+durvals <- predict(dsp,x=f$Log.Viral.Load)$y
+d3 <- data.frame(duration=durvals,svir=70/durvals,
+                 tp=f$TP_Best,
+                 tp.lo=f$TP_bot,tp.hi=f$TP_top,
+                 trate=f$TP_Best/durvals,
+                 trate.lo=f$TP_bot/durvals,
+                 trate.hi=f$TP_top/durvals)
+d3 <- subset(d3,duration>0)
+dutch.mean <- 4.36  ## mean log10(VL) for Amsterdam
+zambia.mean <- 4.74 ## ditto for Zambia
+optR0 <- 4.52 ## 
+optr <- 4.83
+mvals <- predict(dsp,x=c(dutch.mean,zambia.mean,optR0,optr))
+@ 
+
+<<echo=FALSE,warning=FALSE>>=
+## from Table 5 of MacKinnon and Read 1999:
+t5 = data.frame(
+  maxparas=        c(19.3,19.2 ,23.3, 8.4 ,27.5 ,27.6 , 8.6 ,24.0 ,NA),
+  maxparas_day=    c(10.4, 9.4 , 9.7,10.2 , 8.8 , 9.9 ,10.2 , 9.5 ,NA),
+  minwt =          c(19.2,17.8 ,19.6,19.5 ,16.9 ,16.9 ,19.4 ,16.8 ,20.1),
+  minwt_day =      c(10.9,10.9 ,11.0,10.3 ,10.0 ,10.9 ,10.8 ,11.3 ,NA),
+  minrbcdens =     c(1.68, 0.98,1.19, 2.79, 0.77, 1.03, 2.07, 0.78,10.53),
+  minrbcdens_day = c(11.7,10.8 ,10.8,11.5 ,10.01,11.1 ,11.3 ,12.0 ,NA),
+  paras_maxgam =   c(1.6 , 1.0 , 2.2, 0.5 , 0.9 , 1.6 , 0.6 , 2.9 ,NA),
+  maxgam =         c(0.4 , 0.14,1.17, 0.23, 0.29, 0.26, 0.18, 0.81,NA),
+  maxgam_day =     c(13.5,14.4 ,13.2,13.8 ,14.7 ,13.1 ,13.2 ,13.9 ,NA),
+  totgam =         c(2.31, 0.84,9.52, 1.85, 3.21, 1.94, 1.48,13.96,NA),
+  inf_all =        c(22.2,12.6 ,29.2, 5.4 ,18.0 ,18.4 , 7.5 ,24.6 ,NA),
+  inf_rep3 =       c(18.6,24.8 ,58.7,13.6 ,46   ,15.1 ,10.2 , 4.1 ,NA),
+  inf_rep4 =       c(25.7, 1.1 ,12.3, 0.0 , 6.4 ,55.2 , 2.6 ,39.6 ,NA))
+rownames(t5)= c("AD","AJ","AQ","AS","AT","BC","CW","HR","Control")
+t5A = t5[-nrow(t5),c(1,3,5,7,8,10,11)]
+##round(cor(t5A),2)
+q1 = lm(inf_all~poly(maxparas,2),data=t5A)
+L1 = lm(inf_all~maxparas,data=t5A)
+## with(t5A,plot(minrbcdens,totgam))
+## with(t5A,plot(-minwt,inf_all))
+newp = seq(0,30,length=100)
+ipred = predict(q1,newdata=data.frame(maxparas=newp))
+## anova(L1,q1) 
+@ 
+
+
+<<pauldat,echo=FALSE,warning=FALSE>>=
+pauldat = read.table("data/paul1.csv",sep=",",header=TRUE)
+alpha = 1/as.numeric(levels(pauldat$day)[pauldat$day])
+alpha = alpha*(8*365)  ## multiply by host lifespan
+alpha[is.na(alpha)] <- 0
+## pch 1  (circle) SL
+## pch 3  (cross) 4+4
+## pch 15 (square) Thai
+## pch 17 (triangle) 8+8
+pchs=c("4+4"=3,"8+8"=17,"SL"=1,"Thai"=15)
+## replicate Paul et al figure
+## with(pauldat,
+## plot(as.numeric(day),pct,pch=pchs[treat],ylim=c(0,100),
+##      axes=FALSE)
+## axis(side=2)
+##axis(side=1,at=1:5,labels=levels(x$day))
+@ 
+
+
+%% analytical for c0*alpha^(1/gamma) model:
+%%  eq opt = 
+%%  epid opt = max (beta(alpha)*S-alpha) 
+%%                 beta'(alpha)*S = 1
+%%                 
+
+<<myxo,fig.keep="none",results="hide",warning=FALSE>>=
+data(MyxoTiter_sum)
+myxo = MyxoTiter_sum
+casemort <- c(I=(0.99+1)/2,II=(0.95+0.99)/2,III=(0.7+0.95)/2,IV=(0.5+0.7)/2,
+              V=(0+0.5)/2)
+casemort2 <- casemort
+casemort2 <- c(casemort2[1:2],c(IIIA=0.925,IIIB=0.8),casemort2[4:5])
+Tvals <- c(I=11,II=15,IIIA=20,IIIB=26,IV=40,V=118)
+@ 
+
+<<myxo2,fig.keep="none",eval=FALSE>>=
+myxo$fgrade <- factor(myxo$grade)
+## ?? hanging under Sweave?
+grick1 <- gnls(titer~a*day*exp(-b*day),
+               start=c(rep(10,4),rep(0.015,4)),
+                params=a+b~fgrade,data=myxo)
+@ 
+
+<<eval=FALSE>>=
+rm(b)
+grick1 <- mle2(titer~dnorm(mean=a*day*exp(-b*day),sd=sd0),
+               start=list(a=3.5,b=0.1,sd0=1),
+               parameters=list(a~fgrade,b~fgrade),
+               data=myxo,trace=TRUE)
+if (FALSE) {
+  require(ggplot2)
+  g1 = ggplot(myxo,aes(x=day,y=titer,colour=fgrade,group=fgrade))+
+    geom_point()+coord_cartesian(xlim=c(0,28))
+
+  g1 +geom_smooth()
+  g1 +geom_smooth(method="gnls",
+                           formula=y~a*x*exp(-b*x),
+                           start=c(rep(10,4),rep(0.015,4)),
+                           params=a+b~fgrade)
+  }
+                           
+@ 
+
+<<myxo2B,fig.keep="none",results="hide">>=
+avals <- c(coef(grick1)[1],coef(grick1)[1]+coef(grick1)[2:4])
+cm0 <- casemort[-2]
+## plot(cm0,avals,ylim=c(1,4),xlim=c(0,1))
+lm.a <- lm(avals~cm0+I(cm0^2))
+acoef <- coef(lm.a)
+## curve(acoef[1]+acoef[2]*x+acoef[3]*x^2,add=TRUE)
+## curve(3.68-7.8*x+7.5*x^2,add=TRUE,lty=2)
+## text(cm0,avals+c(0.2,-0.2,0.2,0.2),names(cm0))
+bvals <- c(coef(grick1)[5],coef(grick1)[5]+coef(grick1)[6:8])
+## plot(cm0,bvals,ylim=c(0,0.3),xlim=c(0,1))
+lm.b <- lm(bvals~cm0+I(cm0^2))
+@ 
+
+<<myxo3,fig.keep="none",results="hide">>=
+pfun <- function(titer,min=0,max=1) {
+  pmin(max,pmax(0.293*titer-1.48,min))
+}
+
+Tfun <- function(cm) {
+  334.7-70.3*log(cm*100)
+}
+tot.trans <- function(cm) {
+  Tval <- Tfun(cm)
+  a <- predict(lm.a,newdata=list(cm0=cm))
+  b <- predict(lm.b,newdata=list(cm0=cm))
+  day <- 0:(round(Tval)-1)
+  titer <- a*day*exp(-b*day)
+  transm <- pfun(titer)
+  tot.transm <- sum(transm)
+  c(totbeta=tot.transm,T=Tval,avgbeta=tot.transm/Tval,a=a,b=b)
+}
+cmvec <- seq(0.01,0.99,by=0.01)
+vals <- t(sapply(cmvec,tot.trans))
+z <- splinefun(1/vals[,"T"],vals[,"avgbeta"])
+## calculate intersection/equivalent curve
+m <- 0.006
+u1 <- uniroot(function(x) z(x,1)-z(x)/(x+m),interval=c(0.01,0.04))
+## zero-mortality case
+u2 <- uniroot(function(x) z(x,1)-z(x)/(x),interval=c(0.01,0.04))
+## abline(v=u1$root)
+## abline(v=u2$root,lty=2)
+pos <- u1$root
+val <- z(u1$root)
+sl <- z(u1$root,1)
+gam <- val/(pos*sl)
+c0 <- val*pos^(-1/gam)
+@
+
+\section[Seasonal disease]{Transient virulence and seasonality}
+
+\subsection{Overview}
+\begin{frame}
+\frametitle{Seasonality}
+\begin{itemize}
+\item{Many pathogens fluctuate annually
+  \begin{itemize}
+  \item{Host contact/aggregation patterns}
+  \item{Host (or vector) demography}
+  \item{Climatic effects on transmissibility}
+  \end{itemize}
+}
+\item{Fluctuating incidence = fluctuating selection}
+\item{Seasonal variation \emph{or} latitudinal variation?}
+\end{itemize}
+\end{frame}
+
+\subsection{Toy model}
+
+\begin{frame}
+\frametitle{Toy model}
+
+\begin{multicols}{2}
+\begin{itemize}
+\item Basic Ross-MacDonald vector-host model
+\item Simple vector (mosquito) demography
+\item No host demography
+\item Two pathogen strains
+\end{itemize}
+\columnbreak
+\includegraphics[width=2in]{pix/boxmodel_vec.pdf}
+\end{multicols}
+\end{frame}
+
+<<get_params>>=
+params0L.1 <- transform(params0L,vhratio=50)  ## increase prevalence
+params0L.2 <- transform(params0L.1,v=10/11*mu,mu=mu/11) ## modify case mort
+@
+
+<<find_rsc,echo=FALSE>>=
+find_rsc <- function(params,target,n,interval=c(0,10)) {
+    tmpfun <- function(sc) {
+        rvalue(scale_r(params,sc,n),n)-target
+    }
+    uniroot(tmpfun,interval)$root
+}
+params0L_2str <- nstrainParams(params0L.2,n=2) ## generate a 2-identical-strain version
+S1L <- summary(params0L_2str)
+rsc <- 1.2
+r_target <- S1L[["r"]][1]*rsc
+## exploring the
+##   scvec <- seq(0,100,length=601)
+##   fvec <- sapply(scvec,r_targetfun,params_1mod,n=1,target=r_target)
+##   plot(scvec,fvec,type="l")
+params_c1 <- set_r(params0L_2str,r=r_target,n=1) ## scale
+run_1 <- ode(startfun(params_c1),0:120,w_grad,params_c1)
+## boost R0 for strain 1 by 1.5 (multiply betaM)
+S2L <- summary(params_c2.1 <- scale_R0(params0L_2str,sc=1.5,n=1))
+## Now set the r value for strain 1 back to the baseline value
+## (i.e. the r for strain 2)
+params_c2 <- set_r(params_c2.1,S2L$r[2],1)
+params_c3 <- set_r(set_r(params_c2.1,S2L$r[2],1),
+                   S2L$r[2]*rsc,2)
+run_2 <- ode(startfun(params_c2),0:120,w_grad,params_c2)
+run_3 <- ode(startfun(params_c3),0:120,w_grad,params_c3)
+@
+
+%\begin{frame}
+%\frametitle{Parameters}
+
+<<partab,results="asis",label="partab",eval=FALSE>>=
+sum.list <- lapply(list(params_c1,params_c2,params_c3),summary)
+s.tab <- do.call(rbind,lapply(sum.list,unlist))
+s.tab[,1:2] <- round(s.tab[,1:2],2)
+s.tab[,3:4] <- round(s.tab[,3:4],1)
+colnames(s.tab) <- c("$r_1$","$r_2$","$\\rzeroi{1}$","$\\rzeroi{2}$")
+rownames(s.tab) <- paste("Case",c("I","II","III"))
+latex(s.tab,file="",caption="Summary parameters for simulation cases")
+@
+%\end{frame}
+
+\begin{frame}
+\frametitle{Case I: $r_1>r_2$, equal $\rzero$}
+<<plot_case1,warning=FALSE,fig.width=8>>=
+gfun <- function(r) {
+    do.call(grid.arrange,c(plotfun(r,type="ggplot"),list(nrow=1)))
+}
+gfun(run_1)
+@
+\end{frame}
+
+\begin{frame}
+\frametitle{Case II: $\rzeroi{1}>\rzeroi{2}$, equal $r$}
+<<plot_case2,warning=FALSE,fig.width=8>>=
+gfun(run_2)
+@
+\end{frame}
+
+\begin{frame}
+\frametitle{Case III: $\rzeroi{1}>\rzeroi{2}$, $r_2>r_1$}
+<<plot_case3,warning=FALSE,fig.width=8>>=
+gfun(run_3)
+@
+\end{frame}
+
+\subsection{WNV data}
+
+\begin{frame}
+\frametitle{Titer vs infectiousness}
+<<vircalc,echo=FALSE>>=
+virdat <- read.csv("data/virdat.txt",comment="#")
+## For Tiawsirisup 2005 data (where we have numbers infected, but
+## transmission percentages don't match exactly -- so `glm()` will
+## complain about non-integer numbers of successes), recompute
+## the transmission fraction (**to do**: go back to other 
+## sources ("Turell altjmh","Dohm","Turell_JME") and get $n$
+## values if possible).
+virdat <- mutate(virdat,
+                 n_inf=round(inf/100*n),
+                 n_transmission=round(transmission/100*n),
+                 inf=100*n_inf/n,
+                 transmission=ifelse(is.na(n),transmission,
+                 100*n_transmission/n))
+mprof <- with(virdat,seq(max(transmission),100,length=25))/100
+glm0 <- glm(transmission/100~titer,weight=n,
+            data=virdat,
+            family=binomial)
+mfit <- function(m) {
+    glm(transmission/100~titer,weight=n,
+        data=virdat,
+        family=binomial(link=logit.2asym(0,1-m)),
+        start=coef(glm0))
+}
+fitList <- lapply(mprof,mfit)
+dvec <- sapply(fitList,deviance)
+pp <-  interpSpline(mprof,dvec)
+bb <- backSpline(pp)
+upr.asym <- predict(bb,x=min(dvec)+3.84)$y
+@
+
+<<titer_transm>>=
+ggplot(virdat,aes(x=titer,y=transmission/100,weight=n))+
+    geom_point(aes(colour=source))+
+    geom_smooth(method="glm",family=binomial(link=logit.2asym(0,1-mprof[1])),
+                fill="blue")+
+    geom_smooth(method="loess",colour="red",alpha=0.2)+
+    scale_y_continuous(limit=c(0,0.75),oob=squish)+
+    labs(y="Transmission probability")+
+    annotate(geom="errorbar",x=max(virdat$titer),
+             ymin=max(virdat$transmission/100),
+             ymax=upr.asym,width=0.25)+
+    annotate(geom="point",x=max(virdat$titer),
+             y=max(virdat$transmission/100))+
+    geom_vline(xintercept=4.5,lty=2)
+@
+\end{frame}
+
+<<coefs>>=
+tv.int <- round(coef(fitList[[1]])["(Intercept)"],1)
+tv.sl  <- round(coef(fitList[[1]])["titer"],2)
+minpred <- predict(fitList[[1]],newdata=data.frame(titer=4.5),"response")
+@
+
+\begin{frame}
+\frametitle{Titer curves (American crows)}
+<<braultfig>>=
+x0 <- read.csv("data/brault_all.csv")
+## to predict infection from titer:
+coefs <- c(intercept=-14.144,slope=2.01)
+prfun <- function(titer)
+    with(as.list(coefs),0.6*plogis(intercept+slope*titer))
+x0 <- mutate(x0,
+             transm=prfun(titer),
+             probinf2=transm*surv)
+## g1 <- ggplot(x0,aes(day,titer,colour=strain))+geom_line()+
+##    scale_colour_discrete(guide=FALSE)+
+##    geom_hline(yintercept=4.5,lty=2)
+g2 <- ggplot(x0,aes(day,probinf2,colour=strain))+geom_line()+
+    ylab("transmission probability")+scale_y_log10()+
+    geom_hline(yintercept=minpred,lty=2)
+g2
+## grid.arrange(g1,g2,nrow=1,widths = unit(c(1,1.5), "null"))
+@
+\end{frame}
+
+%% removed
+<<probhist,eval=FALSE>>=
+par(las=1,bty="l")
+hist(log10(x0$probinf2),col="gray",breaks=15)
+rug(log10(x0$probinf2),col="red")
+abline(v=log10(minpred),col="blue",lwd=2)
+@
+
+
+<<titersum>>=
+minvir <- 3e-3
+x0sum <- ddply(x0,"strain",
+               summarise,
+               source=head(source,1),
+               a2 = mean(probinf2[probinf2>minvir]),
+               infper=sum(probinf2>minvir),
+               casemort=1-tail(surv,1))
+@
+
+%\begin{frame}
+%\frametitle{Transmission vs clearance}
+<<virplot1B,warning=FALSE,eval=FALSE>>=
+(g2 <- ggplot(x0sum,aes(1/infper,a2))+
+ geom_text(aes(colour=source,label=strain))+
+ scale_x_continuous(limits=c(0,1))+
+ stat_function(fun=function(x) 0.7*x^0.5)+
+    labs(x="Clearance rate (1/infectious period)",
+         y="Average transmission rate")+
+ scale_colour_brewer(palette="Set1"))
+@
+%\end{frame}
+
+<<sparrow>>=
+spdat <- read.csv("data/brault2011_sparrow_viremia.csv")
+## ggplot(spdat,aes(day,titer,colour=strain))+geom_line()+geom_point()
+spdat <- mutate(spdat,
+             transm=prfun(titer),
+             probinf2=transm*surv)
+spsum <- ddply(spdat,"strain",
+               summarise,
+               a2 = mean(probinf2[probinf2>minvir]),
+               infper=sum(probinf2>minvir),
+               casemort=1-tail(surv,1))
+allsum <- rbind(data.frame(species="sparrow",source="Brault2007",
+                           spsum),
+                data.frame(species="amcrow",x0sum))
+@
+
+
+\begin{frame}
+\frametitle{Transmission vs clearance for WNV}
+<<sparrow_crow2,warning=FALSE,message=FALSE>>=
+## http://stackoverflow.com/questions/8197559/emulate-ggplot2-default-color-palette
+gg_color_hue <- function(n) {
+  hues = seq(15, 375, length=n+1)
+  hcl(h=hues, l=65, c=100)[1:n]
+}
+gcols <- gg_color_hue(2)
+(g3 <- ggplot(allsum,aes(1/infper,a2))+
+ geom_text(aes(colour=species,label=strain))+
+ scale_x_continuous(limits=c(0,1))+
+## stat_function(fun=function(x) 0.7*x^0.5,colour=gcols[2],lty=3)+
+## stat_function(fun=function(x) 0.3*x^0.5,colour=gcols[1],lty=3)+
+ labs(x="Clearance rate (1/infectious period)",
+      y="Average transmission rate")+
+ scale_colour_brewer(palette="Set1")+
+ scale_x_continuous(limits=c(0,1))+
+ stat_function(fun=function(x) 0.7*x^0.5))
+@
+\end{frame}
+
+<<calc_grid,cache=TRUE>>=
+clearancevec <- seq(0.1,1,length=51) ## infectious period from 10 days to 1 day
+## we want to specify b (bird -> mosq transm probability) and transform
+##   that to betaB (a1*a2*b = bites/day*fraction of bites*transm prob)
+bvec <- seq(0,0.7,length=51)
+## baseParams = transforms(params_robinX,...)
+rgrid <- rvalue_grid(clearancevec,bvec)
+r0grid <- r0value_grid(clearancevec,bvec)
+@
+
+<<echo=FALSE,eval=FALSE>>=
+par(las=1,bty="l")
+with(rgrid,contour(clearance,beta,r,
+                   xlab="Clearance rate (1/infectious period)",
+                   ylab="Average transmission rate"))
+with(r0grid,contour(clearance,beta,r0,levels=c(1,2,5,10),
+                    col="red",lty=2,add=TRUE))
+@
+
+
+%\begin{frame}
+%\frametitle{lots of species}
+<<komar2,warning=FALSE,eval=FALSE>>=
+Kdat <- read.csv("data/Komar_2003.csv",comment="#",as.is=TRUE)
+Kdat[-1] <- lapply(Kdat[-1],as.numeric)
+mdat <- melt(Kdat,id.vars=1:2)
+vars <- colsplit(mdat$variable,"_",names=c("day","w"))
+vars$day <- as.numeric(gsub("day","",vars$day))
+vars <- na.omit(vars) ## drop duration stuff
+mdat2 <- cbind(mdat[1:525,c("Species","n")],vars,value=mdat$value[1:525])
+mdat3 <- dcast(mdat2,Species+n+day~w)
+## ggplot(mdat3,aes(x=day,y=est))+geom_line(aes(colour=Species))
+kdat2 <- mutate(mdat3,
+                transm=prfun(est),
+                probinf2=transm)
+ksum <- ddply(kdat2,"Species",
+              summarise,
+              a2 = mean(probinf2[probinf2>minvir],na.rm=TRUE),
+              infper=sum(probinf2>minvir,na.rm=TRUE),
+              casemort=NA)
+ksum <- subset(data.frame(rename(ksum,c(Species="species")),
+                   source="Komar2003",strain="NY99"))
+ksum2 <- transform(ksum,
+                   species=factor(ifelse(!species %in% c("American Crow",
+                   "American Robin","House Sparrow","Fish Crow"),
+                   "other",species)))
+levels(ksum2$species) <- c("amcrow","robin","fishcrow","sparrow","other")
+allsum2 <- rbind(allsum,ksum2)
+allsum2$strain2 <- with(allsum2,ifelse(strain=="NY99","NY99","other"))
+ggplot(subset(allsum2,strain=="NY99"),
+       aes(x=1/infper,y=a2,colour=species,shape=source))+
+    scale_colour_manual(values=c("red","blue","purple","cyan","gray"))+
+    geom_point(size=4)+
+    geom_point(data=subset(allsum2,strain!="NY99"),colour="gray")+
+     labs(x="Clearance rate (1/infectious period)",
+      y="Average transmission rate")
+@
+%\end{frame}
+
+\section[Theory vs. data]{More on theory vs. data}
+
+\subsection{Tradeoff curves}
+
+\begin{frame}
+\frametitle{Estimating tradeoff curves}
+\begin{itemize}
+\item Usually \emph{assume} a tradeoff between virulence and transmission
+\item Positive \emph{correlation}
+virulence and transmissibility 
+(or proxies) known from many systems \citepx{LipsitchMoxon1997}
+\item \colemph{shape} of tradeoff curves is largely unknown
+\end{itemize}
+\end{frame}
+
+\begin{frame}
+\frametitle{Malaria \citepx{MackinnonRead1999a,Paul+2004}}
+\begin{center}
+<<maltrade,fig.width=10,fig.height=5>>=
+par(mfrow=c(1,2))
+par(cex=1.5,lwd=2,bty="l",yaxs="i",las=1,mgp=c(2.5,1,0),
+    mar=c(4,4,1,1),font.main=1.5)
+## par(bty="l",las=1)
+## Paul et al:
+with(pauldat,plot(alpha,pct.inf,pch=pchs[treat],ylim=c(0,100),
+     ylab="% mosquitoes infected",xlab="Scaled virulence"))
+title(main=list("Plasmodium gallinaceum",font=4))
+## corner.label("c",cex=1.5)
+jlfit = lm(pct.inf~alpha,data=pauldat)
+jqfit = lm(pct.inf~poly(alpha,2),data=pauldat)
+avec = seq(0,1500,length=200)
+lines(avec,predict(jqfit,newdat=list(alpha=avec)),lty=1)
+legend("bottomleft",
+       pch=pchs,
+       c("low-dose mixed","high-dose mixed",
+         "SL","Thai"),bty="n",cex=0.8)
+##
+with(t5A,plot(maxparas,inf_all,
+              xlab="Maximum parasitemia",
+              ylab="Overall infection (%)"))
+title(main=list("Plasmodium chabaudi",font=4))
+## corner.label("d",cex=1.5)
+lines(newp,ipred)
+abline(L1,lty=2)
+@ 
+\end{center}
+\end{frame}
+
+\begin{frame}
+  \frametitle{\emph{Pasteuria ramosa} \citepx{Jensen+2006}}
+<<jensenfig>>=
+## par(las=1)
+par(cex=1.5,lwd=2,bty="l",yaxs="i",las=1,mgp=c(2,0.5,0),
+    mar=c(4,4,1,1))
+with(jensendat,plot(newalpha1,Spores/Days,xlim=c(0,max(newalpha1)),
+      xlab="Scaled virulence",ylab="",xpd=NA))
+mtext(side=2,line=2.8,expression(paste("Spores/day ",({}%*%10^6))),
+      las=0,cex=1.5)
+newalpha=(1/newdays2)/meanmu
+polygon(c(newalpha,rev(newalpha)),
+        c((vals2$fit-2*vals2$se.fit)/newdays2,rev((vals2$fit+2*vals2$se.fit)/newdays2)),
+        ## col=rgb(0.5,0.5,0.5,0.5),
+        col="gray",
+        border=NA)
+with(jensendat,points(newalpha1,Spores/Days))
+lines(newalpha,vals2$fit/newdays2)
+@
+\end{frame}
+
+%\begin{frame}
+%\frametitle{Tradeoff curve: \emph{Pasteuria ramosa} \citepx{Jensen+2006}}
+<<eval=FALSE,echo=FALSE>>=
+x = read.table("data/jensen-fig.dat")
+names(x) =c("Days","Spores")
+x$Days = round(x$Days)
+x$Spores = pmax(0,x$Spores)
+plot(x$Days,x$Spores)
+g1 = glm(Spores~poly(Days,2),family=quasipoisson,data=x)
+newdays = seq(min(x$Days),max(x$Days),length.out=100)
+vals = predict(g1,newdata=data.frame(Days=newdays),type="response")
+lines(newdays,vals)
+g0 = glm(Spores~Days,family=quasipoisson,data=x)
+## anova(g0,g1,test="F")
+newdays2 = 1/seq(0.001,0.05,length=100)
+vals2 = predict(g1,newdata=data.frame(Days=newdays2),type="response",se.fit=TRUE)
+## mean longevity APPROX 130 days
+meanmu = 1/130
+newalpha1 = (1/x$Days)/meanmu
+@ 
+<<eval=FALSE,fig.height=5>>=
+par(mar=c(5,4,3,1),cex=1.5,lwd=1.5,las=1,bty="l",
+    mgp=c(2.75,1,0))
+plot(newalpha1,x$Spores/x$Days,xlim=c(0,max(newalpha1)),
+     xlab="Scaled virulence",ylab=expression(paste("Spores/day ",({}%*%10^6))))
+newalpha=(1/newdays2)/meanmu
+lines(newalpha,vals2$fit/newdays2)
+matlines(newalpha,(vals2$fit+outer(vals2$se.fit,c(-1,1)))/newdays2,lty=2,
+         col=1)
+@ 
+%\end{frame}
+
+\begin{frame}
+  \frametitle{HIV \citepx{Fraser+2007}}
+<<hivfig,fig.width=6,fig.height=6>>=
+par(mar=c(5,4,3,1),cex=1.5,lwd=1.5,las=1,bty="l",
+    mgp=c(2.75,1,0))
+with(d3,plot(svir,trate,xlim=c(0,60),type="l",
+             ylab="Transmission rate",
+             xlab="Scaled virulence",
+             ylim=c(0,0.5)))
+
+     ## ,ylim=c(0,2.5)))
+with(d3,polygon(c(svir,rev(svir)),
+                c(trate.lo,rev(trate.hi)),
+                ## col=rgb(0.5,0.5,0.5,0.5),
+                col="gray",
+  border=NA))
+with(d3,lines(svir,trate))
+par(xpd=NA)
+par(cex.main=1)
+par(xpd=FALSE)
+vvals <- 70/mvals$y[3:4]
+##vvals[1] <- vvals[1]+3
+abline(v=vvals,lty=c(1,3))
+u2 <- 0 ## par("usr")[3]
+text(vvals+c(3,0),rep(u2,2),pos=c(2,4),
+     c("eq","epi"),
+     xpd=NA)
+@
+\end{frame}
+
+\begin{frame}
+  \frametitle{HIV dynamics \citepx{shirreff_transmission_2011}}
+
+\begin{center}  
+\includegraphics[width=2.5in]{pix/Shirreff.png}
+\end{center}
+\end{frame}
+
+\begin{frame}
+\frametitle{Phage dynamics \citepx{berngruber_evolution_2013}}
+\includegraphics[width=2in]{pix/berngruber0_A.png}
+\includegraphics[width=2in]{pix/berngruber0_B.png}
+\end{frame}
+
+\begin{frame}
+\frametitle{What about space?}
+
+\begin{multicols}{2}
+\begin{itemize}
+\item Theory: spatial structure should select for decreased virulence
+\item Experiment: viscosity decreases \colemph{infectivity}
+in \emph{Plodia} \citep{BootsMealor2007}
+\item Are we ready for space?
+\end{itemize}
+
+\columnbreak
+\includegraphics[width=0.5\textwidth]{pix/BootsMealor.png}
+
+\end{multicols}
+\end{frame}
+
+\subsection{Conclusions}
+
+\begin{frame}
+\frametitle{Conclusions}
+
+\begin{itemize}
+% \item Myxomatosis: reasonable results for
+%   observed $\alpha(t)$, suggest significant (100-200\%) transient
+%   spike in virulence over the first years of the epidemic when
+%   $\alpha(0)= \alpha^*$
+\item Eco-evolutionary dynamics of virulence are still plausible
+\citepx{alizon_virulence_2009,luo_navigating_2013}
+%but parameters are very poorly known
+\pause
+\item Sensitive to genetic variance and shape of tradeoff curve
+\item Theory meets molecular biology: \\
+ mutations of large effect vs. quantitative variability
+\end{itemize}
+\end{frame}
+
+\begin{frame}
+\frametitle{\cite{crome97} on theory}
+\begin{quote}
+When we regard theories as tight, real entities and devote ourselves to their analysis, we can limit our horizons and, worse, attempt to make the world fit them.  A lot of ecological discussion is not about nature, but about theories, generalizations, or models supposed to represent nature \ldots
+\end{quote}
+\end{frame}
+
+
+\begin{frame}
+\frametitle{References}
+\tiny
+\bibliography{virulence}
+\end{frame}
+
+\end{document}
+
