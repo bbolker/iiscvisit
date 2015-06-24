@@ -1,0 +1,14 @@
+* goals?
+* think about workflow
+* biology first!
+* data set size (number of obs)
+* number of complications
+    * missing data (imputation)
+	* complex patterns
+	* mechanistic models
+	* observation vs process error
+	* phylogenetic/pedigree structure
+	* zero-inflation
+	* big data
+	* large number of predictors
+	

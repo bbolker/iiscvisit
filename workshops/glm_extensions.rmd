@@ -1,0 +1,18 @@
+
+
+* overdispersion
+    * quasi-
+	* extended/conjugate models (NB, betabinomial); `gamlss`, `bbmle`
+	* observation-level RE in mixed models
+	* NB2 vs NB1
+* reparameterizations	
+* GEEs	
+* non-standard link-function tricks
+* M Tiwari example
+* zero-inflation
+* offset tricks: exposure time/area
+* additive models
+    * crude (splines)
+	* penalized (`mgcv`/`gamm4`)
+* gnlms (AD Model Builder, JAGS, bbmle)?
+* mixed models

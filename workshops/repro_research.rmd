@@ -1,0 +1,5 @@
+* steal from FitzJohn talk?
+    * [blog post](https://ropensci.org/blog/2014/06/09/reproducibility/)
+    * [github](https://github.com/richfitz/reproducibility-2014)
+
+* 

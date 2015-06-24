@@ -65,8 +65,8 @@ opts_chunk$set(echo=FALSE,fig.align="center",
 \title[Detectability]{Detectability in ecological systems:\\ two nonstandard examples}
 \author[Ben Bolker]{Ben~Bolker, McMaster University \\
   {\tiny Departments of Mathematics \& Statistics and Biology}}
-\institute{Math Bio Research Seminar}
-\date{3 October 2014}
+\institute{NCBS}
+\date{6 July 2015}
 % \pgfdeclareimage[height=0.5cm]{uflogo}{letterhdwm}
 % \logo{\pgfuseimage{uflogo}}
 \AtBeginSection[]{
@@ -389,7 +389,7 @@ largely suppresses positive bias
 
 \begin{frame}
 \frametitle{a bit of data}
-<<fig.width=8,fig.height=3,out.width="\\textwidth">>=
+<<bloodmeals,fig.width=8,fig.height=3,out.width="\\textwidth">>=
 mdat <- read.csv("Robin_bloodmeals.csv")
 ##    data.frame(site=rep(c("Foggy Bottom","Baltimore","NMNH"),
 ##                   c(4,2,1)),
@@ -696,53 +696,9 @@ qplot(year,value,colour=variable,data=dtotals3,
   \end{columns}
 \end{frame}
 
-
-\section{Meta- stuff}
-\setcounter{subsection}{1}
-
-\begin{frame}
-  \frametitle{Cross-citation study}
-  \begin{itemize}
-  \item who cares about math biology?
-  \item more specifically, what is the information flow \\
-    from MB to bio (or math) and \emph{vice versa}?
-  \item extract information from ISI Journal Citation Report \\
-    (thanks to Aaron Berk)
-  \item find top 100 cited/citing journals for: \\
-    (Bull Math Biol, J Theor Biol, Theor Popul Biol,
-    J Math Biol, Math Biosci, PLoS Comput Biol)
-  \end{itemize}
-\end{frame}
-
-\begin{frame}
-  \frametitle{Ordination of (1/(1+avg cites))}
-<<nmds1,fig.width=8,out.width="\\textwidth">>=
-load("metaMDSplot.RData")
-g1 <- ggplot(mmdat2,aes(MDS1,MDS2,label=journal))+
-              labs(x="NMDS axis 1",y="NMDS axis 2")+
-              theme(axis.text.x=element_blank(),
-                   axis.text.y=element_blank())
-g1+geom_text(aes(colour=cat3),size=3)+
-    scale_colour_brewer(palette="Dark2")
-@ 
-\end{frame}
-
-\begin{frame}
-  \frametitle{Biology + math biology only}
-<<nmds2,fig.width=8,out.width="\\textwidth">>=
-colvec <- c(colorRampPalette(c("blue","green"))(14),
-            "cyan","purple","orange")
-g1 %+% subset(mmdat2,cat4!="other") + 
-    geom_text(aes(colour=cat4),size=3)+
-    scale_colour_manual(name="",values=colvec)
-@ 
-\end{frame}
-  
-
-
 \begin{frame}
 \tiny
-\bibliography{yiw}
+\bibliography{detectability}
 \end{frame}
 
 \end{document}

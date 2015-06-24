@@ -1,0 +1,60 @@
+---
+title: "AIC and all that"
+date: "`r format(Sys.time(), '%H:%M %d %B %Y')`"
+author: Ben Bolker
+---
+
+```{r opts,message=FALSE,echo=FALSE,warning=FALSE}
+library("knitr")
+opts_chunk$set(tidy=FALSE)
+```
+
+## Definition
+
+### Goals
+
+* test hypotheses
+* identify 'important' variables
+* make predictions
+
+### Advantages
+
+* simple
+* non-nested (although cf. Ripley)
+* accounts for model complexity
+
+### AIC goals
+
+* AIC is for *prediction*
+
+### ICs
+
+* distinction among ICs
+    * AIC, DIC: prediction
+	* BIC: identify true model
+	* WAIC?
+	* AICc: finite-sample correction (Richards)
+	* QAIC
+* "inconsistency" argument; *tapering effect sizes* (picture)
+* asymptotically equivalent to leave-one-out CV
+* still need to respect limits of model complexity (Harrell rules)
+* multilevel models: what level of focus?
+* how do we count parameters? (CAIC, DIC) (ref Vaida & Blanchard)
+* model-averaged CIs are a good idea, but may still represent hypothesis testing
+
+* parameter averaging (Cade)
+    * must average *predictions*
+	* parameters in linear models may represent predictions
+	* models with/without interactions may be tricky (ref Schielzeth)
+	* how to average zero values?
+* multimodel averaging shrinkage vs. penalized regression (lasso/glmnet et al.)
+* are model weights probabilities? of what?
+     * prob. of inclusion in true best model?
+	 * 'savvy priors'
+	 * what would Bayesian probabilities mean?
+* [blog post](http://emdbolker.wikidot.com/blog:aic-vs-bic)
+
+### Alternatives
+
+* penalized regression not without challenge either, but much faster
+* expanded models (with shrinkage?), i.e. don't test point hypotheses
