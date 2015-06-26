@@ -1,0 +1,17 @@
+How to think about data analysis
+========
+
+* philosophies (Gigerenzer)
+* frequentist
+* information theoretic (algorithmic?)
+     * interested in prediction
+	 * large data sets? data mining?
+	 * cross-validation etc.
+* Bayesian
+     * convenient ('computational Bayesians'): cf. Lele et al
+     * 'calibrated Bayesian'?
+	 
+* Crome:
+
+> Perhaps the average user of significance tests, without knowing it, smears him- or herself over the three major statistical schools [Fisherian frequentist, Neyman-Pearson frequentist, Bayesian], and disobeys the rules of each ...
+	 

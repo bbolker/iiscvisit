@@ -1,0 +1,228 @@
+\documentclass[english]{beamer}
+\usepackage[english]{babel}
+\usepackage{hyperref}
+\definecolor{links}{HTML}{2A1B81}
+\hypersetup{colorlinks,linkcolor=gray,urlcolor=links}
+\usetheme{Berlin}
+\setbeamercovered{transparent}
+\newcommand{\code}[1]{{\tt #1}}
+
+
+\title[RStudio and knitr]{Reproducible research with RStudio and \code{knitr}}
+\author{Ben Bolker}
+\institute[]{McMaster University, Mathematics \& Statistics and Biology }
+\date{25 February 2014}
+
+\begin{document}
+
+<<opts,echo=FALSE>>=
+opts_chunk$set(out.width="0.7\\textwidth")
+@
+
+\begin{frame}
+\titlepage
+\end{frame}
+
+\section{Introduction}
+
+\begin{frame}
+\frametitle{Reproducible research}
+
+\begin{itemize}
+\item Science requires reproducibility
+\item Computational methods: harder to reproduce than math/analytic methods \\
+(but easier than non-computational science)
+\item Maintain integrity
+\item Disseminate knowledge
+\item Maintain personal sanity
+\end{itemize}
+\end{frame}
+
+\begin{frame}
+\frametitle{Literate programming}
+\begin{itemize}
+\item Knuth (1984)
+\item ancestor of RR
+\item similar tools (WEB/weave/tangle), but different scope
+\item targets code as a document with interwoven discussion
+\item \href{http://rpubs.com/bbolker/3153}{some notes on the LP-RR ecosystem}
+\end{itemize}
+\end{frame}
+
+\begin{frame}
+\frametitle{\TeX/\LaTeX}
+
+\begin{itemize}
+\item Knuth (1978)/Lamport (1980s)
+\item mathematical (and general-purpose) typesetting system
+\item \emph{pro}: beautiful, widely used, cross-platform, customizable, stable
+\item \emph{con}: old-fashioned, arcane
+\end{itemize}
+\end{frame}
+
+\begin{frame}
+\frametitle{R}
+\begin{itemize}
+\item Gentleman and Ihaka, 1990s
+\item statistical programming language/data analysis environment
+\item \emph{pro}: powerful, widely used (3000+ packages), 
+cross-platform, customizable
+\item \emph{con}: slower than low-level languages; organic/inconsistent
+\end{itemize}
+\end{frame}
+
+\begin{frame}
+\frametitle{Sweave/knitr}
+\begin{itemize}
+\item Leisch / Xie
+\item literate programming tool, allowing \LaTeX\ chunks in R
+\item highlighted code chunks (\code{echo=TRUE})
+\item automatically generated figures, optionally in a figure environment
+\item \emph{pro}: super-convenient, once you get used to it
+\item \emph{con}: one more software layer; \\
+not suited for \emph{big} projects/code
+\end{itemize}
+\end{frame}
+
+\begin{frame}
+\frametitle{RStudio}
+\begin{itemize}
+\item Allaire et al.
+\item front-end for R
+\item one-button front end for knitr (``Compile PDF'')
+\item \emph{pro}: beginner-friendly; cross-platform; \\ zoomable graphics, code highlighting, tab completion, environment listing, etc.
+\item \emph{con}: R-centric; restriction to built-in editor; \\
+one more software layer
+\end{itemize}
+\end{frame}
+
+\section{Details}
+
+\begin{frame}[fragile]
+\frametitle{Getting started}
+\begin{itemize}
+\item bookmark the \href{http://yihui.name/knitr/}{knitr web page}
+and especially the \href{http://yihui.name/knitr/options}{options page}
+\item switch RStudio to compile documents with \code{knitr}
+(Tools/Global options/Sweave/Weave Rnw files using ...)
+\item make sure \LaTeX\ is installed/working and the \code{knitr} package is installed (\code{install.packages("knitr")}); also install \code{tikzDevice} package
+\item build \href{http://www.math.mcmaster.ca/bolker/R/misc/rstudio_beamer.Rnw}{this document}, or use (File/New File/R Sweave) to generate an empty template (need to add \emph{something} to it); \\ RStudio recognizes \code{.Rnw} extension
+\item code chunks start with \verb+<<>>=+ and end with \verb+@+
+\end{itemize}
+\end{frame}
+
+\begin{frame}
+\frametitle{Troubleshooting}
+\begin{itemize}
+\item load the \code{knitr} package in the R console: \code{library("knitr")}
+\item R code failing? Try running it interactively in the console, or \code{purl()} to pull the code into a separate file
+\item in the console: \\
+\code{knit2pdf("myfile.Rnw")} = pushing the button
+\item step by step: \code{knit("myfile.Rnw")} + \\
+externally \code{pdflatex myfile}
+\item \textbf{always} name your code chunks!
+\item RStudio always compiles PDF in a clean environment
+\end{itemize}
+\end{frame}
+
+\begin{frame}[fragile]
+\frametitle{Code options}
+Set per chunk, e.g. \verb+<<mychunk,echo=TRUE,eval=FALSE>>=+ \\
+or globally via \code{opts\_chunk\$set(...)}
+\begin{itemize}
+\item \code{eval}: evaluate?
+\item \code{echo}: show code?
+\item \code{warning}/\code{message}/\code{error}: show/stop? (knitr does \emph{not} stop on errors by default!)
+\item \code{results}: \code{"markup"} is default, I sometimes use \code{"hide"}
+\item \code{tidy}: reformat code?
+\item \code{cache}: cache results?
+\end{itemize}
+\end{frame}
+
+\begin{frame}[fragile]
+\frametitle{More stuff about code}
+\begin{itemize}
+\item if you're using beamer, need to use \verb+\begin{frame}[fragile]+ if you're going to show code (i.e., \code{echo=TRUE})
+\item code in chunks must be complete/syntactically correct: no fragments allowed; \\
+can't (e.g.) separate parts of a \code{for} loop, even if \code{eval=FALSE}
+\item in-line expressions via \verb+\Sexpr{}+ (don't forget to round numeric values)
+\end{itemize}
+\end{frame}
+
+\begin{frame}[fragile]
+\frametitle{Code example}
+<<code1>>=
+library(nlme)
+## comments get formatted nicely too
+fm1 <- lme(distance ~ age, data = Orthodont)
+@
+\end{frame}
+
+\begin{frame}[fragile]
+\frametitle{Graphics}
+\begin{itemize}
+\item Graphics automatically run (stored in \code{figures} directory)
+\item \code{fig.width}, \code{fig.height} control the size/aspect ratio of the \emph{plot window} (in inches!)
+\item \code{out.width} controls the size of the printed plot \\ (in \LaTeX\ units, e.g. \verb+"0.7\\textwidth"+) \\ (note double backslashes)
+\item \code{dev} controls device: default is "pdf", may want "png" for huge figures or "tikz" for \LaTeX\ fonts and symbols (\emph{not} for big figures!)
+\item \code{fig.cap} generates a figure caption and puts the plot in a \code{figure} environment (need math mode where appropriate, and double backslashes!)
+\end{itemize}
+\end{frame}
+
+\begin{frame}
+\frametitle{Graphics example: basic}
+<<gr1,echo=FALSE>>=
+plot(rnorm(100),rnorm(100))
+@
+\end{frame}
+
+
+\begin{frame}
+\frametitle{Graphics example: \code{fig.width=3,fig.height=3}}
+<<gr2,echo=FALSE,fig.width=3,fig.height=3>>=
+plot(rnorm(100),rnorm(100))
+@
+\end{frame}
+
+
+\begin{frame}[fragile]
+\frametitle{Graphics example: \code{dev="png"}}
+<<gr3,out.width="0.5\\textwidth">>=
+plot(rnorm(1e4),rnorm(1e4))
+@
+\end{frame}
+
+
+\begin{frame}[fragile]
+\frametitle{Graphics example: \code{dev="tikz"}}
+<<gr4,dev="tikz",fig.width=4,fig.height=4,out.width="0.5\\textwidth",tidy=FALSE>>=
+plot(rnorm(100),rnorm(100),
+     xlab="${\\cal R}_0$",ylab="$\\sqrt{\\xi^\\alpha}$")
+@
+\end{frame}
+
+\begin{frame}
+\frametitle{Other stuff}
+\begin{itemize}
+\item other input formats: R markdown
+\item chunks in other languages
+\item output to other formats: HTML, docx
+\item other ways of documenting/disseminating results: \\
+commented R code (\code{spin()}); R packages/vignettes; \code{roxygen2} package
+\item large/batch jobs: caching gets tricky, use Makefiles instead?
+\item figure tricks: 3D (\code{rgl}) plots, animation \ldots
+\end{itemize}
+\end{frame}
+
+\begin{frame}
+\frametitle{Further resources}
+\begin{itemize}
+\item knitr web page, including the \href{http://yihui.name/knitr/demos}{demos} and \href{http://yihui.name/knitr/demo/showcase}{showcase} \ldots
+\item \href{http://stackoverflow.com/questions/tagged/knitr}{StackOverflow}
+\item \href{http://rpubs.com/bbolker}{my examples on Rpubs}
+\item \href{http://www.amazon.com/Dynamic-Documents-knitr-Chapman-Series/dp/1482203537/ref=sr_1_1?ie=UTF8&qid=1393339617&sr=8-1&keywords=xie+knitr+book}{knitr book} on Amazon
+\end{itemize}
+\end{frame}
+
+\end{document}
+

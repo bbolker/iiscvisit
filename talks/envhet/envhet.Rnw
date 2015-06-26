@@ -1,0 +1,739 @@
+\documentclass[english]{beamer}
+\definecolor{links}{HTML}{2A1B81}
+\hypersetup{colorlinks,linkcolor=,urlcolor=links}
+\usepackage{natbib}
+\usepackage[T1]{fontenc}
+\usepackage[latin1]{inputenc}
+\usepackage{amsmath}
+%\usepackage{multicolumn}
+\usepackage{color}
+\usepackage{hyperref}
+\usepackage{amssymb}
+\usepackage{bm}
+\usepackage{graphicx}
+\newcommand{\colemph}[1]{{\color{red} \emph{#1}}}
+\newcommand{\todo}[1]{{\color{red} \textbf{FIXME: #1}}}
+\newcommand{\fourier}[1]{\ensuremath{\tilde #1}}
+\renewcommand{\vec}[1]{\ensuremath{\mathbf #1}}
+\newcommand{\Nbar}{\bar N}
+\newcommand{\ssize}{5.5in}
+% \newcommand{\sqfoilhead}[1]{\foilhead[-0.8in]{#1}}
+% \newcommand{\sqqfoilhead}[1]{\foilhead[-1.2in]{#1}}
+\usepackage[normalem]{ulem}
+\usepackage[buttonsize=1em]{animate}
+
+\bibliographystyle{shortreflist}
+
+\usetheme{Berlin}
+\setbeamercovered{transparent}
+
+\newcommand{\citepx}[1]{{\small \citep{#1}}}
+\newcommand{\citex}[1]{{\small \cite{#1}}}
+\usepackage{babel}
+
+<<opts,echo=FALSE>>=
+library("knitr")
+opts_chunk$set(echo=FALSE,fig.align="center",out.width="0.7\\textwidth",fig.width=6,fig.height=5,message=FALSE,warning=FALSE)
+@
+
+<<pkgs,message=FALSE,warning=FALSE>>=
+library("grid")
+library("ggplot2"); theme_set(theme_bw())
+@
+
+\title[Spatial estimation]{Estimating environmental heterogeneity from spatial dynamics data}
+\author[Ben Bolker]{Ben~Bolker, McMaster University \\
+  {\tiny Departments of Mathematics \& Statistics and Biology}}
+\institute{XXX}
+\date{YY July 2015}
+% \pgfdeclareimage[height=0.5cm]{uflogo}{letterhdwm}
+% \logo{\pgfuseimage{uflogo}}
+\AtBeginSubsection[]{
+  \frame<beamer>{ 
+     \frametitle{Outline}   
+     \tableofcontents[currentsection,currentsubsection] 
+   }
+ }
+
+\begin{document}
+
+\makeatletter
+\def\newblock{\beamer@newblock}
+\makeatother 
+
+\begin{frame}
+\titlepage
+\end{frame}
+% \beamerdefaultoverlayspecification{<+->}
+
+\section{Introduction}
+
+\begin{frame}
+\frametitle{Outline}
+\tableofcontents{}
+\end{frame}
+
+\begin{frame}
+  \frametitle{What do ecologists want?}
+\begin{itemize}
+\item \colemph{Explicit} questions: explain observed patterns
+\item \colemph{Implicit} questions: explain outcomes of ecological interactions:
+  persistence, coexistence, trait evolution, etc..
+\end{itemize}
+\pause
+\begin{itemize}
+\item \colemph{Qualitative} answers: presence/absence, persistence/extinction, coexistence/exclusion
+\item \colemph{Quantitative} answers: how many? how quickly? scale(s) of pattern?
+\end{itemize}
+\pause
+\begin{itemize}
+\item \colemph{Deductive} (forward) models: model $\to$ outcome
+\item \colemph{Inductive} (inverse) models: data $\to$ model
+\end{itemize}
+\end{frame}
+  
+\begin{frame}
+  \frametitle{Typical examples}
+  
+  \begin{itemize}
+  \item Can spatial pattern allow coexistence of similar species?
+  \item Is a particular example of coexistence spatially mediated?
+  \end{itemize}
+\pause
+  \begin{itemize}
+  \item Do endogenous or exogenous drivers produce spatial clustering?
+  \item What drives spatial clustering in a particular case?
+  \end{itemize}
+\pause
+  
+The answer to ``does process $X$ operate in ecological system $Y$''
+is most often ``\colemph{Yes}.''
+  
+\end{frame}
+
+\begin{frame}
+  \frametitle{Typical models}
+  
+  \begin{itemize}
+  \item Stochastic spatial point processes: continuous time \& space, point
+    individuals, infinite domains
+  \item Spatial (two-point, truncated) correlation functions
+  \item Usually assume isotropy and translational invariance
+  \item Exogenous heterogeneity expressed as correlation function of parameters
+  \end{itemize}
+
+\pause
+e.g. \colemph{spatial logistic}: 
+\begin{tabular}{llc}
+  \textbf{Process} & \textbf{Effect} & \textbf{Rate} \\
+  competition & subtract individual at $x$ & $\sum_{x \in \gamma} \sum_{y \in \gamma} a^{-}(y-x)$ \\
+  death & subtract point at $x$ & $\sum_{x \in \gamma} m(x)$ \\
+  birth & add point at $x$ & $\int_{\Omega} \sum_{y \in \gamma} a^{+}(y-x) \, dx$
+\end{tabular}
+
+\end{frame}
+
+\section{Endogenous vs exogenous: qualitative}
+\subsection{Explanations for spatial patterns}
+
+\begin{frame}
+  \frametitle{Templates}
+\begin{columns}
+  \begin{column}{0.5\textwidth}
+    \begin{itemize}
+    \item assume habitat map reflects underlying spatial pattern more or less exactly:
+      low diffusion (but $>0$), high growth rate
+    \end{itemize}
+  \end{column}
+  \begin{column}{0.5\textwidth}
+    \centering
+    \includegraphics[width = 4 cm]{pix/patchy-shrub-crop-2.jpg} \\
+    {\tiny photo: Henry Horn}
+  \end{column}
+\end{columns}
+\end{frame}
+
+\begin{frame}
+  \frametitle{Nonlinear (deterministic) pattern formation}
+\begin{columns}
+  \begin{column}{0.5\textwidth}
+    \begin{itemize}
+    \item \colemph{Turing instabilities}: unstable spatial modes
+      of nonlinear systems
+    % \item activator-inhibitor systems with 
+    %   $D_{\mbox{inhibitor}}>D_{\mbox{activator}}$
+    \item in ecology: tiger bush, spruce waves, predator-prey spirals
+      \citepx{rohani_spatial_1997}
+    \item requires \emph{no} noise, just initial perturbation
+    \end{itemize}
+  \end{column}
+  \begin{column}{0.5\textwidth}
+    \centering
+    \includegraphics[width = 4 cm]{pix/350px-Tiger_Bush_Niger_Corona_1965-12-31.jpg} \\
+    {\tiny \href{http://en.wikipedia.org/wiki/Tiger_bush}{tiger bush (Wikipedia)}}
+  \end{column}
+\end{columns}
+\end{frame}
+
+\begin{frame}
+  \frametitle{Demographic noise-driven pattern}
+  \begin{itemize}
+  \item Correlation equations: Dirac $\delta$ function in 
+    spatial correlation function due to discreteness
+  \item Drives pattern in homogeneous, stable systems (e.g. competition):
+    $C=0$ is not even an equilibrium for the spatial logistic equation
+    \pause
+  \item{Effects could be weak: 
+      \begin{itemize}
+      \item depend on scale of interaction neighborhood
+        \citepx{bol99}: in numbers of individuals: $\approx 10$, 100, 1000 ?
+      \item effects depend on $R=f/\mu$
+        for equal scale of dispersal \& competition, get even pattern
+        if $R>2$ \citepx{bp98}
+      \end{itemize}
+    }
+  \item Could be stronger with fine-scale heterogeneity (e.g. negative
+    binomial noise?)
+  \end{itemize}
+\end{frame}
+
+% \begin{frame}
+%   \frametitle{Interactions between noise and nonlinearity}
+%   \begin{columns}
+%     \begin{column}{0.5\textwidth}
+%       \begin{itemize}
+%       \item Possibility of noise-excited stabilization of pattern?
+%       \item Unstable (e.g. predator-prey) systems
+%       \end{itemize}
+%     \end{column}
+%     \begin{column}{0.5\textwidth}
+%       \includegraphics[height=1.6in]{pix/turfwilt-crop-2b}
+%     \end{column}
+%   \end{columns}
+% \end{frame}
+
+\begin{frame}
+  \frametitle{General (environmental) noise-driven pattern}
+  Most general case: space(-time) noise $\xi(x,t,N(t))$
+  \begin{itemize}
+  \item Scale may be $>0$ (non-white in space and time)
+  \item Amplitude may scale differently from $\sqrt{N}$ 
+  \item{Space-time correlations: 
+      \begin{itemize}
+      \item separable \citex{snyder_how_2004} ?
+      \item other correlations can be framed as outcomes of dynamical processes
+      \end{itemize}}
+  \end{itemize}
+  Properties other than 2-point correlation functions?
+\end{frame}
+
+\begin{frame}
+  \frametitle{Summary: what do we need?}
+  \begin{itemize}
+  \item Lots of interesting questions, but perhaps existing methods are good enough for ecologists?
+  \item{Importance of stochastic dynamics at various scales:
+    \begin{itemize}
+    \item Is demographic (endogenous) noise really that important?
+    \item Perhaps a more traditional separation of scales (individual, patch, site, \ldots) is enough?
+    \end{itemize}}
+  \item \textbf{How do we estimate the (effects of) heterogeneity?}
+  \end{itemize}
+\end{frame}
+
+\section{Endogenous vs exogenous: quantitative}
+
+<<loadspecdata,results="hide">>=
+## load functions, data, etc.
+source("R/moran-funs-2.R")
+source("R/specfuns.R")
+source("R/wishart.R")
+
+pjdat <- read.csv("data/pjun2.csv",header=TRUE)  ## precip??
+tjdat <- read.csv("data/tjunraw.csv",header=TRUE)
+
+####### what to do about missing data???
+pj.x <- pjdat[,1]
+pj.y <- pjdat[,2]
+pj.z <- pjdat[,-(1:2)]
+## sum(is.na(pj.y))
+## why are there NAs in y coords??
+## drop these points ...
+oklocs <- !is.na(pj.y)
+pj1.x <- pjdat[oklocs,1]
+pj1.y <- pjdat[oklocs,2]
+pj1.z <- t(pjdat[oklocs,-(1:2)])
+
+tj.x <- tjdat[,1]
+tj.y <- tjdat[,2]
+tj.z <- t(tjdat[,-(1:2)])
+
+## hack: replace NAs with mean value (for time period)
+na.repl <- function(x) {
+  x[is.na(x)] <- mean(x,na.rm=TRUE)
+  x
+}
+
+## read and massage/explore moth data
+dat <- read.table("data/esbw.txt",header=TRUE)
+esbw.allx <- dat[,1]
+esbw.ally <- dat[,2]
+totcount <- apply(dat[,-(1:2)],1,mean)
+## sum(totcount>0)
+dat2 <- dat[totcount>0,]
+esbw.x <- dat2[,1]*5  ## convert 
+esbw.y <- dat2[,2]*5
+esbw.z <- t(dat2[,-(1:2)])
+
+##########
+source("R/pine-funs.R") ## miscellaneous  utilities
+source("R/sim_anal.R")
+@
+
+\subsection{Spatial synchrony}
+
+\begin{frame}
+  \frametitle{Spatial synchrony}
+  \begin{columns}
+  \begin{column}{0.5\textwidth}
+    \begin{itemize}
+      \item Eastern spruce budworm, \emph{Choristeroneura fumiferna}
+      \item non-spatial dynamics: plant quality, climate, enemies \citepx{kendall_why_1999}?
+      \item{What generates large-scale spatial synchrony?
+        \begin{itemize}
+        \item \colemph{Moran effect}: large-scale weather patterns
+        \item \colemph{Dispersal coupling}: movement of larvae
+        \end{itemize}}
+      \end{itemize}
+    \end{column}
+    \begin{column}{0.5\textwidth}
+      \begin{tabular}{cc}
+        \includegraphics[height=0.8in]{pix/wsblarva} & \\
+        & \includegraphics[height=1.25in]{pix/WSBdamage}
+        \end{tabular}
+      \end{column}
+  \end{columns}
+\end{frame}
+
+\begin{frame} \frametitle{Correlation equations: \emph{via} continuous eqns}
+cf. \citex{lande_spatial_1999}, Engen et al. 2002:
+\begin{eqnarray}
+\frac{\partial N(\vec x,t)}{\partial t} & = &
+\underbrace{
+\vphantom{\int}
+F(N(\vec x,t),E(\vec x,t))}_{\text{pop. growth}}
+- \underbrace{
+\vphantom{\int} 
+m N(\vec x)}_{\text{emigration}}  
+\nonumber \\
+ & & \mbox{} +  \underbrace{m \int D(\vec y,\vec x) N(\vec y) \, d\vec y}_{\text{immigration}} 
+\nonumber \\
+\nonumber \\
+\frac{\partial n}{\partial t} & \approx & \underbrace{-r n(\vec x,t)}_{\text{regulation}}
+ + \underbrace{m (D*n-n)}_{\text{redistribution}}
+ + \underbrace{\sigma^2_E e(\vec x,t)}_{\text{noise}}
+ \nonumber \\
+2 (r+m) c^* & = & m (D*c^*) + \sigma^2_E \text{Cor}(e)
+\nonumber
+\end{eqnarray}
+\end{frame}
+
+\begin{frame}
+  \frametitle{Moth sampling locations}
+<<mothsamplelocs>>=
+par(las=1)
+MASS::eqscplot(esbw.x,esbw.y,bty="l",
+     xlab="E-W (km)",ylab="N-S (km)")
+points(tj.x,tj.y,pch=16)
+legend("bottomright",c("SBW","temperature"),pch=c(1,16))
+@
+\end{frame}
+
+\begin{frame}
+  \frametitle{Moth dynamics}
+<<sbwanim,fig.show="animate",interval=0.2,fig.width=10,fig.height=5,out.width="\\textwidth",aniopts="controls">>=
+## aniopts="controls" (i.e. NOT looping: default is "controls,loop"
+yrs <- 1945:1988
+tmpf <- function(i) {
+    z1 <- data.frame(x=esbw.x,y=esbw.y,z=esbw.z[i,])
+    ggplot(z1,aes(x=x,y=y,colour=z))+geom_point(size=8)+
+        expand_limits(colour=c(0,1))+
+            scale_colour_gradient(high="#ff0000",breaks=seq(0,1,by=0.2))+
+    annotate("text",x=2000,y=1650,label=yrs[i],size=10)+
+        labs(x="",y="")
+}
+for (i in 1:nrow(esbw.z)) print(tmpf(i))
+@
+\end{frame}
+
+\begin{frame}
+  \frametitle{Spatial correlations of moth data}
+<<mothcorrs>>=
+## tjcov <- mSncf(tj.x,tj.y,t(tj.z),na.omit=TRUE,resamp=20)
+## mcov <- mSncf(esbw.x,esbw.y,t(esbw.z),na.omit=TRUE,resamp=20)
+## save("mcov","tjcov",file="covs.RData")
+load("data/covs.RData")
+par(las=1,mar=c(5,4,2,2)+0.1)
+plot(tjcov,col=2,bty="l",text=FALSE,lwd=2,
+     xlab="Distance (km)",ylim=c(-0.2,1))
+plot(mcov,add=TRUE,lwd=2)
+##plot(pjcov,add=TRUE,col=4)
+legend("topright",cex=1.5,
+       c("moth density","June temp."),
+       lwd=2,
+       col=1:2)
+@ 
+\end{frame}
+\begin{frame} \frametitle{Spatial logistic: solution}
+At equilibrium, the power spectrum of the population densities obeys
+$$
+\tilde S=\left|\left(\fourier{N}^*\right)\right|^2 =
+\frac{\sigma^2_E \fourier{e}}{2(r+m(1-\fourier{D}))}
+$$
+where $\tilde \ $ denotes the Fourier transform. Therefore:
+$$
+\sigma_P^2(p) = \sigma_E^2 + \frac{m}{r} \sigma_D^2
+$$
+(Lande et al. 1999) where $\sigma_X$ represents the 
+standard deviation of the autocorrelation function
+
+%\begin{center}\includegraphics[height=1in,width=2in]{scalefig}\end{center}
+\end{frame}
+\begin{frame}
+  Simple expressions for $\fourier{S}$ if we choose
+  \begin{itemize}
+  \item $D \propto e^{-\lambda |r|}$ (Laplacian) in 1D
+  \item Bessel ($K_0$) in 2D
+  \end{itemize}
+  So that $\fourier K(\lambda) = \lambda/(\lambda^2+\omega^2)$.
+  
+Then 
+$$
+\fourier{S} = c_1 \fourier{K}(\lambda_e) + 
+c_2 \fourier{K}(\lambda_d \sqrt{r/(r+m)})
+$$
+
+\end{frame}
+\begin{frame} \frametitle{Spectral ratios}
+Alternatively, calculate the \colemph{spectral ratio}: 
+$$
+\tilde R = \frac{\fourier{e}}{\tilde S} = \frac{2}{\sigma^2_E}  (r+m(1-\fourier{D}))
+= c_1 - c_2 \fourier{D}
+$$
+
+Re-invert to \colemph{deconvolve} the effects of
+environmental variability from the
+population pattern \ldots
+\end{frame}
+
+\begin{frame}
+  \frametitle{Reconstructing the dispersal curve}
+
+  \includegraphics[width=3in]{pix/dconst}
+
+  We know the limits $\tilde D(0) = 1$, $\tilde D(\infty) \to 1$:
+% R = c1-c2 D
+% D(0)=1
+% R(0) = c1-c2
+% R(inf) = c1
+% c2 = R(inf)-R(0)
+% D = (R(inf)-R)/(R(inf)-R(0))
+thus
+$$
+\tilde D_{\mbox{est}}(\omega) = \frac{\tilde R(\infty)- \tilde R(\omega)}%
+{\tilde R(\infty)-\tilde R(0)}
+$$
+
+% \foilhead{Theoretical correlations and transforms}
+% \begin{center}
+% \begin{tabular}{cc}
+% \textbf{Correlations} & \textbf{Transforms} \\
+% \includegraphics[width=4in]{thcov1b} &
+%  \includegraphics[width=4in]{thspec1b} 
+% \end{tabular}
+% \end{center}
+% $\lambda_D=1/2$, $\lambda_E=10$, $\sigma^2_E=1$, $r=1/10$,
+% $m=1$
+
+\end{frame}
+
+<<calcmothspecs,cache=TRUE>>=
+tj3.z <- tj.z
+tj3.z <- t(apply(tj3.z,1,na.repl))
+
+esbw.specs <- mspec.hankel(esbw.x,esbw.y,esbw.z,
+                           weight=TRUE,spec=TRUE,
+                           boot=TRUE,norm="integrate",
+                           smooth=TRUE)
+
+esbw.specsf <- mspec.hankel(esbw.x,esbw.y,esbw.z,
+                            freq=seq(0.0005,0.025,length=50),
+                            weight=TRUE,spec=TRUE,all.boot=TRUE,
+                            boot=TRUE,norm="integrate",
+                            smooth=TRUE)
+
+esbw.specs.in <- mspec.hankel(esbw.x,esbw.y,esbw.z,
+                           weight=TRUE,spec=TRUE,
+                           boot=TRUE,norm="intnorm",
+                           smooth=TRUE)
+
+tj.specs <- mspec.hankel(tj.x,tj.y,tj3.z,
+                           weight=TRUE,spec=TRUE,
+                           boot=TRUE,norm="integrate",
+                           smooth=TRUE)
+
+tj.specsf <- mspec.hankel(tj.x,tj.y,tj3.z,
+                          freq=seq(0.0005,0.025,length=50),
+                          all.boot=TRUE,
+                          weight=TRUE,spec=TRUE,
+                          boot=TRUE,norm="integrate",
+                          smooth=TRUE)
+mothratio <- mspec.hankel.ratio(esbw.specsf,tj.specsf)
+
+@ 
+
+\begin{frame} 
+  \frametitle{Moth data: spectra}
+<<mothspectra>>=
+par(mar=c(5,7,2,7))
+matplot(esbw.specsf$freq,
+        sqrt(cbind(esbw.specsf$spec,esbw.specsf$boot)),type="l",log="y",
+        lty=c(1,2,2),col=1,bty="l",
+        cex.lab=2,cex.axis=1.5,lwd=2,
+        xlab="",ylab="",las=1,mgp=c(4.5,1,0),axes=FALSE,
+        xlim=c(0,0.022))
+axis(side=1,cex.axis=1.5)
+axis(side=2,at=c(500,1e4),cex.axis=1.5,las=1)
+box()
+mtext(side=1,text=expression(paste("Frequency (",km^-1,")")),line=3,cex=2)
+mtext(side=2,las=1,at=15000,text="Population",line=0,cex=1.5)
+par(new=TRUE)
+matplot(tj.specs$freq,
+        sqrt(cbind(tj.specs$spec,tj.specs$boot)),type="l",log="y",
+        lty=c(1,2,2),bty="l",xlim=par("usr")[1:2],
+        lwd=2,col=2,axes=FALSE,xlab="",ylab="")
+axis(side=4,cex.axis=1.5,col=2,col.axis=2,las=1,
+     at=c(1e5,2e6))
+mtext(side=4,col=2,
+      at=3e6,las=1,text="Environment",cex=1.5,line=0)
+@
+\end{frame}
+
+%\begin{frame} \frametitle{Moth data: spectral ratios}
+%\stdfig{mothratio}
+%\end{frame}
+
+\begin{frame}\frametitle{Moth data: spectral ratios}
+<<mothspecpix>>=
+par(mar=c(5,4,2,2)+0.1)
+par(cex=1.5,las=1)
+plot.ratio(list(specratio=mothratio),bty="l",neg=TRUE,fmax=0.015,
+           xlab=expression(paste("Frequency (",km^-1,")")))
+@           
+\end{frame}
+
+%\begin{frame} \frametitle{Putative moth dispersal curve}
+%\stdfig{mothdisp}
+%\end{frame}
+
+\begin{frame} \frametitle{(Putative) moth dispersal curve}
+<<mothdisp>>=
+invratio <- function(specratio,lastfrac=0.5) {
+  n <- length(specratio$ratio)
+  c1 <- mean(specratio$ratio[round((1-lastfrac)*n):n])
+  c2 <- c1-specratio$ratio[1]
+  Dinv <- (c1-specratio$ratio)/c2
+  Dinv[Dinv<0] <- 0  ## impose pos. def.
+  D <- spec.hankel(Dinv,specratio$freq,spec=FALSE,smooth=TRUE,
+                   fmax=500,smooth.n=10)
+}
+D <- invratio(mothratio)
+par(lwd=2,bty="l",las=1)
+plot(D$freq,D$spec,lty=1,bty="l",type="l",
+     lwd=2,xlab="Distance (km)",ylab="Dispersal")
+@
+\end{frame}
+
+\subsection{Pines}
+\begin{frame}
+  \frametitle{Pines}
+\begin{columns}
+  \begin{column}{5cm}
+    \begin{itemize}
+      \item Slash pine, \emph{Pinus elliottii}
+      \item Data on seed distribution, seedling distribution,
+        but not collected on the same quadrats
+      \item Sampling scheme highly irregular; sparse data
+      \end{itemize}
+  \end{column}
+  \begin{column}{5cm}
+    \includegraphics[width=4cm]{pix/240px-Slash_pine} \\
+    {\tiny \href{http://en.wikipedia.org/wiki/Pinus_elliottii}{Wikipedia}}
+  \end{column}
+\end{columns}
+\end{frame}
+
+\begin{frame}
+  \frametitle{Seed data}
+<<seedplot>>=
+load("data/pine2.RData")
+plot_sdata(seeds)
+@ 
+\end{frame}
+
+\begin{frame}
+  \frametitle{Sapling data}
+<<saplingplot>>=
+plot_sdata(seedlings)
+@ 
+\end{frame}
+
+\begin{frame}
+  \frametitle{Correlation functions}
+<<corrplots,echo=FALSE>>=
+load("data/PVB4.RData")
+m <- get_all_cors(L,do_sim=FALSE,do_poisson=FALSE)
+datplot <- gplot(m) 
+datplot %+% subset(m,type!="env")+facet_wrap(~type)+theme(legend.position="none")
+@ 
+\end{frame}
+
+\begin{frame}
+  \frametitle{Analytical framework (2)}
+  \begin{itemize}
+  \item assume \emph{cross-covariance} $C_{EN}=0$ \\
+    {\small no correlation between seeds and environment, \\
+      e.g. long-distance dispersal}
+  \item $$
+C_{SS}(r) = \bar N^2 C_{EE}(r) + \bar E^2 C_{NN}(r)
+$$
+(where $\bar N$=mean seed density, , $\bar E$=mean establishment probability)
+\item or (switch to correlation $c$)
+$$
+C_{SS} \propto \frac{\sigma^2E}{\bar E^2} c_{EE} + \frac{\sigma^2_N}{\bar N^2} c_{NN}
+$$
+\item \ldots a weighted mixture of the two correlation functions
+  \end{itemize}
+\end{frame}
+
+\begin{frame}
+  \frametitle{Solving for $c_{EE}$}
+  Therefore,
+$$
+c_{EE} \propto \sigma^2_S c_{SS}- \bar E^2 \sigma^2_N c_{NN} 
+$$
+
+Can we really use this?
+\end{frame}
+
+\begin{frame}
+  \frametitle{Results: observed/inferred correlation equations}
+<<dataestplot,out.width="\\textwidth",fig.width=8>>=
+datplot+facet_wrap(~type,nrow=1)
+@ 
+\end{frame}
+
+\begin{frame}
+  \frametitle{Simulation results}
+  \begin{center}
+<<PBbatchfig1,out.width="\\textwidth",fig.width=8>>=
+L <- load("data/PVB9.RData")
+zz$grp <- with(zz,interaction(.id,w,type))
+if (is.null(zz$rvec)) zz <- data.frame(rvec=seq(0,25,by=0.1),zz)
+(g1PBB <- gplot(zz,grp=TRUE,alpha=0.1)+facet_wrap(~type,nrow=1))
+@ 
+\end{center}
+\end{frame}
+
+\section{Conclusions}
+\begin{frame}
+  \frametitle{Caveats/assumptions}
+  \begin{itemize}
+  \item Assumes linearization/moment truncation
+  \item Assumes isotropy/homogeneity
+  \item Estimating spectra of small, irregular, noisy data sets is difficult (!)
+  \item Advantages vs. direct estimation (e.g. via MCMC) ?
+  \end{itemize}
+\end{frame}
+\begin{frame}
+  \frametitle{Goals}
+  \begin{itemize}
+  \item Simple, light-weight (!!), non-parametric (??) approach to spatial estimation
+  \item leverage ``unreasonable effectiveness'' of linearization \\
+    \citepx{GurneyNisbet1998}
+  \item{Use all available information:
+    \begin{itemize}
+    \item snapshots, before/after, time/series
+    \item non-matching spatial samples
+    \end{itemize}}
+  \end{itemize}
+\end{frame}
+  
+\begin{frame}
+\frametitle{Acknowledgements}
+
+\begin{description}
+  \item[People] Ottar Bj{\o}rnstad, Sandy Liebhold, Aaron Berk, Gordon Fox, Stephen Cornell,
+    Mollie Brooks, Emilio Bruna
+  \item[Funding] NSF, NSERC (Discovery Grant)
+  \end{description}
+\end{frame}
+
+
+\begin{frame}
+  \frametitle{Meta-issues}
+
+  \begin{itemize}
+    \item{Why do interdisciplinary work?
+      Public vs. private explanations:
+      \begin{itemize}
+      \item for fun
+      \item to find interesting math problems
+      \item to solve biological problems (basic or applied)
+      \item career enhancement (publications, grants, publicity \ldots)
+      \end{itemize}}
+    \item{Interactions of science with mathematics
+        \begin{itemize}
+        \item Physics vs. biology vs. social sciences
+        \item Quantitative or qualitative differences?
+        \item Which differences matter? Scale, noisiness, data quality/quantity,
+          culture (lumpers vs. splitters), \ldots ?
+        \item Are different strategies required?
+        \end{itemize}}
+    \end{itemize}
+  \end{frame}
+
+\begin{frame}
+  \includegraphics[width=\textwidth]{pix/purity} \\
+\url{http://xkcd.com/435/}
+  \end{frame}
+
+% \begin{frame}
+%   \frametitle{Provocation}
+
+%   From \href{http://www-stat.wharton.upenn.edu/~steele/ModelingNote/ModelingNote.pdf}{J. Michael Steele} (University of Pennsylvania):
+  
+%   \begin{quote}
+%     \tiny
+%     Some may say, ``I build general methods that may be used by many people
+%     for many purposes. The issue of fitness for use is for the next fellow, not
+%     me.''
+    
+%     This seems somewhat reasonable, but it doesn't cover all the bases. In a
+%     lifetime of work, it's not credible at least some of one's effort should not
+%     have been done with a concrete and important purpose in mind.
+    
+%     Moreover, many people have found that work with an clear and compelling
+%     purpose greatly shifts the issues that one considers to be of importance.
+%     There is a much sharper focus on the weakest link in the application
+%     chain. If one link is almost broken, it's virtually psychotic to focus
+%     great effort on making other links stronger.
+%   \end{quote}
+% \end{frame}
+
+\begin{frame}
+\tiny
+\bibliography{ZiF}
+\end{frame}
+
+\end{document}
+
