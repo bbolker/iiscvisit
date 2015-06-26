@@ -8,12 +8,12 @@
 
 * 11am-12:30am: Talk and discussion: "How to think about data analysis". Principles and philosophies of statistical inference: frequentist, information-theoretic, Bayesian.
 * 12:30-2pm: Lunch with faculty (Main guest house)
-* 2:30 pm: Workshop:     Workshop on Extensions of GLM (overdispersion, GAM, gnlm)
+* 2:30 pm: Workshop: Extensions of GLM (overdispersion, GAM, gnlm) (approx. 35 students)
 
 ## DAY 2: 30th June
 
 * 11:30pm - 1:30pm: Data lunch 1 (bring your own food)
-* 2:30pm:     Workshop on mixed-effects / hierarchical modelling (esp GLMM)
+* 2:30pm: Workshop on mixed-effects / hierarchical modelling (esp GLMM) (approx. 35 students)
 
 ## DAY 3: 1st July
 

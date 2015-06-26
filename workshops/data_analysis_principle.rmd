@@ -1,17 +1,81 @@
-How to think about data analysis
-========
+---
+title: "Data analysis: principles"
+date: "`r format(Sys.time(), '%H:%M %d %B %Y')`"
+author: Ben Bolker
+output: rmarkdown::tufte_handout
+bibliography: "../iisc.bib"
+---
 
-* philosophies (Gigerenzer)
-* frequentist
-* information theoretic (algorithmic?)
-     * interested in prediction
-	 * large data sets? data mining?
-	 * cross-validation etc.
-* Bayesian
-     * convenient ('computational Bayesians'): cf. Lele et al
-     * 'calibrated Bayesian'?
-	 
-* Crome:
+```{r opts,message=FALSE,echo=FALSE,warning=FALSE}
+library("knitr")
+opts_chunk$set(tidy=FALSE)
+```
+
+## More important than statistical philosophy
+
+* Good experimental design (replication, randomization, independence, control, interspersion, adequate power)
+
+> The combination of some data and an aching desire for an answer does not ensure that a reasonable answer can be extracted from a given body of data. [@Tukey1986]
+
+* Sensible, well-posed questions
+    * if you want to know if a variable is "important", or what model is "best", you need to know what you mean
+* Knowledge of the system
+* Strong signals will always be detectable; weak signals will never be	
+* Better analyses should be (within limits)
+    * more powerful
+	* better at disentangling (unavoidably) messy data
+	* more interpretable
+* No free lunches	
+
+## Philosophies 
+
+* don't look for a single philosophy [@gigerenzer_surrogate_2015]
+* in many cases different philosophies give similar answers; differences should be understandable
+
+**Frequentist**
+
+* classic, well-tested
+* much maligned
+* Fisherian (strength of evidence) vs. Neyman-Pearson (decision-theoretic)
+* null-hypothesis significance testing
+* objective (?)
+
+**Bayesian**
+    
+* easier to incorporate prior knowledge [@mccarthy_bayesian_2007]
+* easier to incorporate uncertainty [@ludwig_uncertainty_1996]
+* easy=easy; medium=hard; hard=possible 
+* convenience/pragmatic/computational Bayesians: cf. Lele et al
+* more natural statement of confidence ...
+* **but** ... 'calibrated Bayesianism' (Gelman, de Valpine)
+* frequentist approaches [@valpine_better_2003; @solymos_dclone_2010; @ponciano_hierarchical_2009]
+
+## Computational
+
+**permutation testing**
+
+* robust
+* only gives $p$-values (usually)
+* e.g. current *phylogenetic overdispersion* methods [@cavender-bares_merging_2009]
+* combine with parametric models for robust $p$-values
+
+**information theoretic/algorithmic** [@breiman_statistical_2001]
+
+* interested in prediction 
+* large data sets; data mining
+* cross-validation etc.
+* information-theoretic approaches loosely fall in this category   
+(fitting is based on frequentist tools, inference is prediction-based)
+
+## Last thoughts
+
+* most of the statisticians I respect are agnostic about philosophies (e.g. Andrew Gelman: 
+
+> ["I have no problem with non-Bayesians: those statisticians who for whatever combination of theoretical or applied reasons prefer not to use Bayesian methods in their own work"](http://andrewgelman.com/2014/03/18/wacky-anti-bayesians/)
+
+* @crome_researching_1997:
 
 > Perhaps the average user of significance tests, without knowing it, smears him- or herself over the three major statistical schools [Fisherian frequentist, Neyman-Pearson frequentist, Bayesian], and disobeys the rules of each ...
 	 
+
+## References

@@ -4,6 +4,10 @@
 
 ### Evo vir (day 5)
 
+* uploaded, probably needs lots of polishing
+* recent Michalakis & Alizon paper?
+* more from Shirreff/Hirbeck?
+
 ### Detectability (day 8)
 
 * change beamer format?
@@ -15,11 +19,19 @@
 
 ## Talks/Workshops/Discussions
 
+* hyperlinks in Tufte-handout docs?
+
 ### Thinking about data analysis (day 1)
+
+* done
 
 ### GLM extensions (day 1)
 
+* need more
+
 ## Mixed effect models (day 2)
+
+* use `mixedlab`, Banta?
 
 ### Repro research (day 4)
 

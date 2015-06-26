@@ -1,4 +1,17 @@
-* goals?
+---
+title: "title"
+date: "`r format(Sys.time(), '%H:%M %d %B %Y')`"
+author: Ben Bolker
+---
+
+```{r opts,message=FALSE,echo=FALSE,warning=FALSE}
+library("knitr")
+opts_chunk$set(tidy=FALSE)
+```
+
+
+* goals? confirm, predict (decide), explore ...
+* avoid snooping: decide on (at least primary) analyses first
 * think about workflow
 * biology first!
 * data set size (number of obs)
@@ -11,4 +24,16 @@
 	* zero-inflation
 	* big data
 	* large number of predictors
+	* compositional data
+	* ordinal data
+	* multivariate/multitype responses
+	* 
 	
+* model reduction (Harrell)
+* model-informed model reduction
+    * stepwise
+	* minimal adequate model
+	* Bates, Venables examples ...
+* OK for prediction (Murtaugh 2009)
+
+* snooping

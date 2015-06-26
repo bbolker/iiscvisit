@@ -1,18 +1,149 @@
+---
+title: "GLM extensions"
+date: "`r format(Sys.time(), '%H:%M %d %B %Y')`"
+author: Ben Bolker
+output: rmarkdown::tufte_handout
+bibliography: "../iisc.bib"
+---
 
+# Basics/reminders
 
-* overdispersion
-    * quasi-
-	* extended/conjugate models (NB, betabinomial); `gamlss`, `bbmle`
-	* observation-level RE in mixed models
-	* NB2 vs NB1
-* reparameterizations	
-* GEEs	
-* non-standard link-function tricks
-* M Tiwari example
-* zero-inflation
-* offset tricks: exposure time/area
-* additive models
-    * crude (splines)
-	* penalized (`mgcv`/`gamm4`)
-* gnlms (AD Model Builder, JAGS, bbmle)?
-* mixed models
+## Distributions (`family`)
+
+* pick distribution
+* use knowledge, not statistical testing (but see @firth_multiplicative_1988, @dick_beyond_2004)  
+* 99% of GLMs are Gaussian, binomial (usually Bernoulli), or Poisson  
+(or overdispersed equivalents)
+* log-Normal is usually more practical for continuous data than Gamma
+
+## Link functions
+
+* linearizing transformation
+* can usually stick to *canonical* link (binomial=logistic, Poisson=log)
+* differences (e.g. probit vs logit) mostly have to do with interpretation or culture
+* log generally more practical than inverse link for Gamma
+
+## Parameterization
+
+* simple but not easy
+* default *treatment* contrasts; *sum-to-zero* contrasts
+* interpreting interactions
+* R formula (Wilkinson-Rogers) notation
+* "what if I want to know the value for each group?": fit with `-1` or use `lsmeans`, `effects`, `rockchalk` packages
+* centering and scaling [@schielzeth_simple_2010]
+* linear models apply **on linear predictor scale**
+* rules of thumb for interpreting effects: log $\approx$ proportional, logit $\approx$ proportional at ends, $r/4$ near 50%
+
+# Top 10 GLM mistakes
+
+* ignoring overdispersion
+* ignoring blocking factors (failing to use mixed models where necessary)
+* applying discrete models (Poisson, binomial) to non-discrete data: **don't divide!**
+* equating negative binomial with binomial rather than Poisson
+* confusion in interpreting effects
+* worrying about marginal rather than conditional distributions of data
+* miscalculating CIs by applying $\pm$ standard errors
+* using $(k,N)$ rather than $(k,N-k)$ in binomial models
+* getting confused by predictions on the linear predictor scale
+* using GLMs where linear models will do (i.e. `glm` instead of `lm`) (*mostly harmless*)
+
+# Relaxing distributional assumptions
+
+## Overdispersion
+
+* *scale parameter* is fixed to 1 for Poisson (variance=mean), binomial (variance=$Np(1-p)$
+
+**Methods**
+
+* quasi-likelihood (`glm(...,family=quasibinomial)`)
+* extended/conjugate models (neg binomial [`MASS::glm.nb`], betabinomial); `gamlss`, `bbmle`
+* mean-variance relationship can be parameterized differently.
+    * NB2: $V = \mu + \mu^2/k$ ($k>0$)
+    * NB1: $V = \tau \mu$ ($k>1$)
+* observation-level random effects in mixed models (lognormal-Poisson; logit-normal-binomial) (`lme4`)
+* what about *underdispersion*?
+    * less common
+	* quasi-likelihood OK
+	* ordinal models
+	* more exotic (COM-Poisson)
+
+## Zero-alteration
+
+* zero-inflation: **too many** zeros
+```{r echo=FALSE,fig.width=10,message=FALSE}
+library("emdbook")
+par(mfrow=c(1,3),las=1,bty="l")
+set.seed(101)
+pp <- function(x) plot(prop.table(table(x)),ann=FALSE,ylim=c(0,1),
+                       yaxs="i")
+pp(rpois(1000,0.05))
+pp(rnbinom(1000,mu=0.1,size=0.01))
+pp(rzinbinom(1000,mu=4,size=5,zprob=0.8))
+```
+* zero-alteration: maybe too few zeros?
+* zero-*truncation*: no zeros
+    * truncated Poisson/binomial
+	* or just assume $X \sim Poisson(\lambda)+1$ (easier)
+* *zero-inflation* (mixture) and *hurdle* models: `pscl` package
+* don't throw out zeros - but remember that a data set with mostly zeros is not very informative!
+* zero-inflated *continuous* data?
+    * two-stage (binomial + positive distribution)
+    * censoring model (Tobit)
+    * Tweedie models
+
+# Extend location model
+
+## Polynomials
+
+* adding quadratic term can make a big difference
+* link-function polynomials are more reasonable (e.g. quadratic + log-link=Gaussian)
+* probably not worth taking too seriously/going beyond cubic
+
+## Additive models
+
+* smooth piecewise cubic functions (partitioned at *knots*) [@wood_generalized_2006]
+* simple: `splines::ns(.,df=k)`
+* `mgcv`: penalized spline models
+* harder to interpret
+* slightly more 'expensive' than simpler nonlinear models
+* harder to constrain (linear extrapolation)
+* extensions: 2-D, monotonic, convex ...
+
+## Link tricks
+
+* use alternate links, or transform $X$ variable
+     * log-link, `y~x`: exponential
+	 * log-link, `y~log(x)`: power-law ($Y=\exp(a+b \log(X)) \to Y=c X^d$
+* binomial model with log-link gives saturating-exponential model [@Strong+1999; @Tiwari+2006]
+* inverse link with `y~1/x` gives *hyperbolic* (Michaelis-Menten/Holling type II) type models
+* power-logistic
+* defining upper limit for logistic
+* use `glm(...,family=gaussian(link="log"))` to fit exponential models with *constant* variance (cf. `lm(log(y)~x)`)
+
+## Nonlinear models
+
+* complete flexibility
+* formula interface of `bbmle` simplifies things
+* need to pick starting values; worry more about parameterization
+
+# Misc tricks
+
+## Offset tricks
+
+* constants added to the linear predictor
+* Poisson model: add $\log(\textrm{area})$ (or whatever) to model a ratio of counts by exposure
+   * $Y = \exp{b_0 + b_1 x \boldsymbol{+ \log A}}$ \to $Y/A = \exp{b_0 + b_1 x}$
+* survival/mortality model: use $\log(\textrm{exposure})$ on **log-hazard** scale (`binomial(link="cloglog")`), or power-logistic ("Mayfield ratios")
+* for convenience in resetting null model. e.g. log-link, `y~log(x)+offset(log(x))` tests difference from isometric model
+
+## Complete separation
+
+* all-zero/all-one categories in binomial, Poisson models
+* GLM estimate *should* be infinite (but is just large); maybe `glm.fit` warning
+* *bias-reduced* estimate (Firth); `brglm`, `logistf` packages
+* standard errors and $p$-values from `summary()` (*Wald* approximation) are crazy
+* Bayesian priors: `arm::bayesglm`
+
+![](pix/dick2004_sm.png)
+
+## References
