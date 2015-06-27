@@ -25,6 +25,7 @@ opts_chunk$set(tidy=FALSE)
     * more powerful
 	* better at disentangling (unavoidably) messy data
 	* more interpretable
+	* more convenient, faster, easier (cf. @ohara_not_2010 vs. @ives_for_2015)
 * No free lunches	
 
 ## Philosophies 
@@ -73,6 +74,7 @@ opts_chunk$set(tidy=FALSE)
 
 > ["I have no problem with non-Bayesians: those statisticians who for whatever combination of theoretical or applied reasons prefer not to use Bayesian methods in their own work"](http://andrewgelman.com/2014/03/18/wacky-anti-bayesians/)
 
+* good statisticians choose good tools *and* get good results; makes it harder to tell if the tools or the person is what's powerful (the *methodological attribution problem*, @gelman_bayesian_2010).
 * @crome_researching_1997:
 
 > Perhaps the average user of significance tests, without knowing it, smears him- or herself over the three major statistical schools [Fisherian frequentist, Neyman-Pearson frequentist, Bayesian], and disobeys the rules of each ...
