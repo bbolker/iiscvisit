@@ -1,0 +1,214 @@
+---
+title: "GLM extensions exercise"
+date: "`r format(Sys.time(), '%H:%M %d %B %Y')`"
+author: Ben Bolker
+output: rmarkdown::tufte_handout
+bibliography: "../iisc.bib"
+---
+
+# Location models: fitting functional responses
+
+```{r pkgs,message=FALSE,warning=FALSE}
+library("emdbook")  ## for reedfrog data
+library("aods3")    ## for overdispersion tests
+library("bbmle")
+library("mgcv")     ## for GAMs
+library("pscl")
+```
+
+```{r start}
+par(mfrow=c(1,2))
+par(las=1,bty="l")  ## cosmetic
+plot(Killed~Initial,data=ReedfrogFuncresp,
+     cex=sqrt(Initial*0.05))
+## shorter/easier to type, and proportion will be handy
+Rfd <- transform(ReedfrogFuncresp,
+                 prop=Killed/Initial)
+```
+
+* Fit a linear model:
+```{r results="hide"}
+summary(lm(Killed~Initial,data=Rfd))
+```
+Inspect the summary.  Use `abline()` to add the regression line to the plot above.  What do the coefficients, $p$-value, etc., mean?  What do you think you could take away from this analysis?
+* Fit a naive GLM:
+```{r results="hide"}
+glm1 <- glm(prop~Initial,weights=Initial,data=Rfd,family=binomial)
+summary(glm1)
+```
+What do the parameters and p-values of this model mean?
+Check overdispersion with `gof()` and adjust accordingly
+(I would recommend `family=quasibinomial` as the simplest solution in this case; note that the parameter estimates will not change.)
+
+Construct a new data frame with evenly spaced initial numbers for
+prediction purposes:
+```{r pframe}
+pframe <- data.frame(Initial=min(Rfd$Initial):max(Rfd$Initial))
+```
+Now use `predict()` to get the predicted values for these initial
+densities (don't forget to use `type="response"` to get probabilities
+rather than log-odds values).  Plot the *proportions* (not numbers) killed
+(response) vs `Initial` (predictor) 
+and use `lines()` to superimpose your predictions on the plot.
+
+```{r echo=FALSE,fig.keep="none"}
+## predict
+pframe$prop <- predict(glm1,newdata=pframe,type="response")
+## re-plot and superimpose predictions
+plot(prop~Initial,data=Rfd,cex=sqrt(Initial*0.05),ylim=c(0,1))
+with(pframe,lines(Initial,prop))
+## redo with wider range ...
+pframe2 <- data.frame(Initial=min(Rfd$Initial):1000)
+pframe2$prop <- predict(glm1,newdata=pframe2,type="response")
+plot(prop~Initial,data=Rfd,cex=sqrt(Initial*0.05),xlim=c(0,1000),
+     ylim=c(0,1))
+with(pframe2,lines(Initial,prop,col=2))
+```
+You may be surprised at the linearity of the predicted curve.
+What happened?  Did we mess something up?
+If you don't understand right away and want to
+gain more insight, or if you think you understand and want to 
+check yourself, try redoing the predictions with a wider range
+of initial densities (up to 1000) and re-do the plot with wider limits 
+(`xlim=c(1,1000)`, `ylim=c(0,0.7)`) ...
+
+If you already know how to use `ggplot`, you can try plotting the data
+and adding
+```{r geom_smooth,eval=FALSE}
+geom_smooth(method="glm",family="quasibinomial",
+            aes(weight=Initial),fullrange=TRUE)+
+    expand_limits(x=0,y=1000)
+```
+to replicate the plot we've just done.
+
+```{r ggplot,echo=FALSE,fig.keep="none",message=FALSE}
+library("ggplot2"); theme_set(theme_bw())
+ggplot(Rfd,aes(Initial,prop))+geom_point(alpha=0.5,aes(size=Initial))+
+    scale_size_area()+
+        geom_smooth(method="glm",family="quasibinomial",
+                    aes(weight=Initial),fullrange=TRUE)+
+            expand_limits(y=0,x=1000)
+```
+* Now let's try fitting a nonlinear model.  The model that goes
+along with a Holling type II model is 
+$$
+\begin{split}
+K & \sim \text{Binom}(p_d,N) \\
+p_d & = a/(1+ahN)
+\end{split}
+$$
+where $a$ is the attack rate, $N$ is the initial density
+(which is assumed not to change much over the course of the
+epidemic), $p_d$ is the *per capita* probability of predation
+(the expected number killed is $p_d N$).
+In order to have a chance of getting this to work we
+also have to have reasonable guesses for the initial 
+parameters.  If we do the algebra
+we can work out that the asymptote of the $K$ vs $I$ graph is 
+$1/h$ and the initial slope is $a$. Eyeballing the graph,
+it seems as though the asymptote might be around 50 and the
+initial slope might be around 1/4 ...
+```{r mle1,warning=FALSE}
+mle1 <- mle2(Killed~dbinom(prob=a/(1+a*h*Initial),
+                           size=Initial),
+             data=Rfd,
+             start=list(a=1/4,h=1/50))
+```
+This gives us reasonable answers (but also warnings,
+which we could probably get rid of by using a bounded
+optimizer (`method="L-BFGS-B"`, `lower=c(0,0)`) or
+by fitting $a$ and $h$ on the log scale
+(`prob=exp(loga)/(1+exp(loga)*exp(logh)*Initial)`)).
+Compute the predicted probabilities (by hand
+or using `predict()`) and overlay them on the previous
+graphs.  How big a difference does it make?
+* Now we'll try to fit the same model with an inverse-link GLM.
+$$
+\begin{split}
+K & \sim \textrm{Binom}\left(\frac{1}{b_0+b_1 N}, N \right) \\
+  & = \textrm{Binom}\left(\frac{(1/b_0)}{1 + (b_1/b_0) N}\right)
+\end{split}
+$$
+So this is equivalent to the previous model with $a=1/b_0$, $ah=b_1/b_0$
+($b_1=ahb_0=h$, $b_1=1/a$).
+```{r}
+glm_inv <- glm(prop~Initial,
+    weights=Initial,
+    family=quasibinomial(link="inverse"),
+    data=Rfd)
+```
+Check that the parameters are equivalent.
+Superimpose the predictions on plot(s).
+```{r ggplot2,echo=FALSE,fig.keep="none",message=FALSE}
+library("mgcv")
+ggplot(Rfd,aes(Initial,prop))+geom_point(alpha=0.5,aes(size=Initial))+
+    scale_size_area()+
+        geom_smooth(method="glm",family="binomial",
+                    aes(weight=Initial),fullrange=TRUE)+
+        geom_smooth(method="glm",family=binomial(link="inverse"),
+                    aes(weight=Initial),fullrange=TRUE,colour="red")+
+            geom_smooth(method="gam",family=binomial,
+                        aes(weight=Initial),fullrange=TRUE,colour="purple")
+            expand_limits(y=0,x=1000)
+```
+* We could also fit a GAM: 
+```{r gam}
+gam1 <- gam(Killed~s(Initial),family=quasibinomial,data=Rfd)
+```
+(or using `quasibinomial(link="inverse")`).  You will probably
+find that the model collapses back down to a linear model,
+which is a nice feature of penalized GAMs. It's worth noting that since
+we only have 6 different initial-density values, it's not worth
+trying to get *too* clever about our model!
+* Rogers random-predator model: see Bolker 2008, `?lambertW`
+in the `emdbook` package.  How much difference does it make?
+How do the interpretations of the parameters change?
+
+# Zero-inflated models
+
+Data from @roulin_nestling_2007.  There are in fact multiple
+observations per nest (meaning that we ought to be using a
+zero-inflated GLMM), but we're going to ignore that for the
+moment.
+
+```{r}
+owls <- read.table("data/Owls.txt",header=TRUE)
+plot(NegPerChick~ArrivalTime,data=owls)
+```
+
+How big a model can we afford to fit?  We have `r nrow(owls)` observations,
+so at least at first glance that means we can fit
+```{r psclfit}
+zi1 <- zeroinfl(SiblingNegotiation~ArrivalTime*SexParent*FoodTreatment+
+                    offset(log(BroodSize)),data=owls)
+zi2 <- update(zi1,dist="negbin")
+AICtab(zi1,zi2)
+## questionable but ...
+zi2 <- update(zi1,.~.-ArrivalTime:SexParent:FoodTreatment-
+                  SexParent:FoodTreatment-ArrivalTime:SexParent)
+```
+
+```{r}
+for 
+
+```{r ziplot}
+ff <- fitted(zi2)
+rr <- residuals(zi2,type="pearson")
+par(las=1,bty="l")
+tmpplot <- function(x,y) {
+    plot(x,y,type="n")
+    panel.smooth(x,y)
+}
+tmpplot(ff,rr,xlab="fitted",y="residual")
+tmpplot(ff,sqrt(abs(rr)))
+```
+
+First make sure `coda` is already installed, then:
+```{r coefplot2_installed,eval=FALSE}
+install.packages("coefplot2",repos="http://www.math.mcmaster.ca/bolker/R",
+                 type="source")
+```
+                 
+* scale data
+* coef plots?
+* broom?

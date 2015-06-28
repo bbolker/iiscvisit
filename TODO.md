@@ -19,7 +19,8 @@
 
 ## Talks/Workshops/Discussions
 
-* hyperlinks in Tufte-handout docs?
+* coloured hyperlinks in Tufte-handout docs?
+
 
 ### Thinking about data analysis (day 1)
 
@@ -27,11 +28,18 @@
 
 ### GLM extensions (day 1)
 
-* need more
-
+* lab:
+    * work on Z-I
+* lecture:
+    * add Banta var-mean picture to lecture
+    * improved Dick-2004 picture
+	
 ## Mixed effect models (day 2)
 
-* use `mixedlab`, Banta?
+* talk:
+   * add links to Fox book (post chapter)
+* lab:
+   * updated version of Banta
 
 ### Repro research (day 4)
 
@@ -42,7 +50,9 @@
 ## Data vis (day 6)
 
 * mostly done
+* lab ??
 
 ### AIC (day 8)
+
 * write! examples?
 * HG example (log-model-averaging with zeros)
