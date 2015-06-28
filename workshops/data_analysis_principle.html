@@ -63,7 +63,7 @@ img {
 <div id="header">
 <h1 class="title">Data analysis: principles</h1>
 <h4 class="author"><em>Ben Bolker</em></h4>
-<h4 class="date"><em>21:59 26 June 2015</em></h4>
+<h4 class="date"><em>12:22 28 June 2015</em></h4>
 </div>
 
 
@@ -78,7 +78,7 @@ img {
 <ul>
 <li>Sensible, well-posed questions
 <ul>
-<li>if you want to know if a variable is “important”, or what model is “best”, you need to know what you mean</li>
+<li>if you want to know if a variable is “important”, or what model is “best”, you need to know what you mean by that</li>
 </ul></li>
 <li>Knowledge of the system</li>
 <li>Strong signals will always be detectable; weak signals will never be<br /></li>
@@ -95,8 +95,8 @@ img {
 <div id="philosophies" class="section level2">
 <h2>Philosophies</h2>
 <ul>
-<li>don’t look for a single philosophy <span class="citation">(Gigerenzer and Marewski 2015)</span></li>
-<li>in many cases different philosophies give similar answers; differences should be understandable</li>
+<li>don’t look for a single philosophy<br /><span class="citation">(Gigerenzer and Marewski 2015)</span></li>
+<li>in many cases different philosophies give similar answers;<br />differences should be understandable (e.g. <span class="citation">Ludwig (1996)</span>)</li>
 </ul>
 <p><strong>Frequentist</strong></p>
 <ul>
@@ -108,9 +108,18 @@ img {
 </ul>
 <p><strong>Bayesian</strong></p>
 <ul>
+<li>basic idea:
+<ul>
+<li>it’s easy to compute the probability of the <em>data</em> happening given the model (parameters etc.): <em>likelihood</em></li>
+<li>if we want to compute the probability of a <em>model</em> (parameters), we need to use <strong>Bayes’ Rule</strong></li>
+<li>… this in turn means we need to specify <em>prior probabilities</em><br />i.e., what did we think before we saw the data?</li>
+<li>often bend over backwards to use <em>weak</em> or <em>uninformative</em> priors</li>
+</ul></li>
+<li>for strong data, simple cases, get nearly identical answers to freq.</li>
 <li>easier to incorporate prior knowledge <span class="citation">(McCarthy 2007)</span></li>
 <li>easier to incorporate uncertainty <span class="citation">(Ludwig 1996)</span></li>
 <li>easy=easy; medium=hard; hard=possible</li>
+<li>have to specify priors</li>
 <li>convenience/pragmatic/computational Bayesians: cf. Lele et al</li>
 <li>more natural statement of confidence …</li>
 <li><strong>but</strong> … ‘calibrated Bayesianism’ (Gelman, de Valpine)</li>
@@ -121,6 +130,7 @@ img {
 <h2>Computational</h2>
 <p><strong>permutation testing</strong></p>
 <ul>
+<li>similar to rank-based non-parametrics<br />(Mann-Whitney, Wilcoxon, Spearman correlations …)<br /></li>
 <li>robust</li>
 <li>only gives <span class="math">\(p\)</span>-values (usually)</li>
 <li>e.g. current <em>phylogenetic overdispersion</em> methods <span class="citation">(Cavender-Bares et al. 2009)</span></li>
@@ -134,8 +144,8 @@ img {
 <li>information-theoretic approaches loosely fall in this category<br />(fitting is based on frequentist tools, inference is prediction-based)</li>
 </ul>
 </div>
-<div id="last-thoughts" class="section level2">
-<h2>Last thoughts</h2>
+<div id="last-thoughts-on-philosophy" class="section level2">
+<h2>Last thoughts on philosophy</h2>
 <ul>
 <li>most of the statisticians I respect are agnostic about philosophies (e.g. Andrew Gelman:</li>
 </ul>
@@ -149,19 +159,37 @@ img {
 <blockquote>
 <p>Perhaps the average user of significance tests, without knowing it, smears him- or herself over the three major statistical schools [Fisherian frequentist, Neyman-Pearson frequentist, Bayesian], and disobeys the rules of each …</p>
 </blockquote>
+</div>
+<div id="more-on-practice" class="section level2">
+<h2>More on practice</h2>
+<ul>
+<li>People (including scientists) are lazy (or think they have more important things to do) and prefer simple rules.</li>
+<li><em>Some</em> rules of thumb for filtering noise are helpful (<span class="math">\(p=0.05\)</span> is more or less a historical accident <span class="citation">(Dallal 2015)</span>: Fisher: ``in fact no scientific worker has a fixed level of significance at which from year to year, and in all circumstances, he rejects hypotheses; he rather gives his mind to each particular case in the light of his evidence and his ideas.’’</li>
+<li>Listening to music makes you younger: <span class="citation">(Simmons, Nelson, and Simonsohn 2011)</span></li>
+<li>Graphical evidence for <span class="math">\(p\)</span>-value abuse:</li>
+</ul>
+<p><img src="data:image/png;base64,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" /></p>
+<p><span class="citation">(Gerber and Mahotra 2008; Drum 2006)</span></p>
+<ul>
+<li>Need to decide in advance if you are trying to <em>confirm (test) hypothesis</em>, <em>predict</em> future outcomes or <em>explore</em> the data looking for interesting patterns:<br />different rules/procedures in each case!</li>
+</ul>
 <div class="references">
 <h2>References</h2>
 <p>Breiman, Leo. 2001. “Statistical Modeling: The Two Cultures.” <em>Statistical Science</em> 16 (3): 199–215. <a href="http://www.jstor.org/stable/2676681" class="uri">http://www.jstor.org/stable/2676681</a>.</p>
 <p>Cavender-Bares, Jeannine, Kenneth H. Kozak, Paul V. A. Fine, and Steven W. Kembel. 2009. “The Merging of Community Ecology and Phylogenetic Biology.” <em>Ecology Letters</em> 12 (7): 693–715. doi:<a href="http://dx.doi.org/10.1111/j.1461-0248.2009.01314.x">10.1111/j.1461-0248.2009.01314.x</a>.</p>
 <p>Crome, Francis H. J. 1997. “Researching Tropical Forest Fragmentation: Shall We Keep on Doing What We’re Doing?” In <em>Tropical Forest Remnants: Ecology, Management, and Conservation of Fragmented Communities</em>, edited by W. F Laurance and R. O Bierregard, 485–501. Chicago, IL: University of Chicago Press.</p>
+<p>Dallal, Gerard E. 2015. “Why P=0.05?” Accessed June 28. <a href="http://www.jerrydallal.com/LHSP/p05.htm" class="uri">http://www.jerrydallal.com/LHSP/p05.htm</a>.</p>
 <p><span>de Valpine</span>, Perry. 2003. “Better Inferences from Population-Dynamics Experiments Using Monte Carlo State-Space Likelihood Methods.” <em>Ecology</em> 84 (11): 3064–77.</p>
+<p>Drum, Kevin. 2006. “The Washington Monthly.” <a href="http://www.washingtonmonthly.com/archives/individual/2006_09/009531.php" class="uri">http://www.washingtonmonthly.com/archives/individual/2006_09/009531.php</a>.</p>
 <p>Gelman, Andrew. 2010. “Bayesian Statistics Then and Now.” <em>Statistical Science</em> 25 (2): 162–65. doi:<a href="http://dx.doi.org/10.1214/10-STS308B">10.1214/10-STS308B</a>.</p>
+<p>Gerber, Alan S., and Neil Mahotra. 2008. “Publication Incentives and Empirical Research: Do Reporting Standards Distort the Published Results?” <em>Sociological Methods and Research</em> 37 (1): 3–30. <a href="http://polmeth.wustl.edu/retrieve.php?id=640" class="uri">http://polmeth.wustl.edu/retrieve.php?id=640</a>.</p>
 <p>Gigerenzer, Gerd, and Julian N. Marewski. 2015. “Surrogate Science: The Idol of a Universal Method for Scientific Inference.” <em>Journal of Management</em> 41 (2): 421–40. <a href="http://jom.sagepub.com/content/41/2/421.short" class="uri">http://jom.sagepub.com/content/41/2/421.short</a>.</p>
 <p>Ives, Anthony R. 2015. “For Testing the Significance of Regression Coefficients, Go Ahead and Log-Transform Count Data.” <em>Methods in Ecology and Evolution</em>. doi:<a href="http://dx.doi.org/10.1111/2041-210X.12386">10.1111/2041-210X.12386</a>.</p>
 <p>Ludwig, Donald. 1996. “Uncertainty and the Assessment of Extinction Probabilities.” <em>Ecological Applications</em> 6 (4): 1067–76.</p>
 <p>McCarthy, M. 2007. <em>Bayesian Methods for Ecology</em>. Cambridge, England: Cambridge University Press.</p>
 <p><span>O’Hara</span>, Robert B., and D. Johan Kotze. 2010. “Do Not Log-Transform Count Data.” <em>Methods in Ecology and Evolution</em> 1 (2): 118–22. doi:<a href="http://dx.doi.org/10.1111/j.2041-210X.2010.00021.x">10.1111/j.2041-210X.2010.00021.x</a>.</p>
 <p>Ponciano, José Miguel, Mark L. Taper, Brian Dennis, and Subhash R. Lele. 2009. “Hierarchical Models in Ecology: Confidence Intervals, Hypothesis Testing, and Model Selection Using Data Cloning.” <em>Ecology</em> 90 (2): 356–62. <a href="http://www.jstor.org/stable/27650990" class="uri">http://www.jstor.org/stable/27650990</a>.</p>
+<p>Simmons, Joseph P., Leif D. Nelson, and Uri Simonsohn. 2011. “False-Positive Psychology Undisclosed Flexibility in Data Collection and Analysis Allows Presenting Anything as Significant.” <em>Psychological Science</em> 22 (11): 1359–66. doi:<a href="http://dx.doi.org/10.1177/0956797611417632">10.1177/0956797611417632</a>.</p>
 <p>Sólymos, Péter. 2010. “Dclone: Data Cloning in R.” <em>The R Journal</em> 2 (2): 29–37. <a href="http://journal.r-project.org/archive/2010-2/RJournal_2010-2_Solymos.pdf" class="uri">http://journal.r-project.org/archive/2010-2/RJournal_2010-2_Solymos.pdf</a>.</p>
 <p>Tukey, John W. 1986. “Sunset Salvo.” <em>The American Statistician</em> 40 (1): 72–76.</p>
 </div>

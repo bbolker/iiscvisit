@@ -18,7 +18,7 @@ opts_chunk$set(tidy=FALSE)
 > The combination of some data and an aching desire for an answer does not ensure that a reasonable answer can be extracted from a given body of data. [@Tukey1986]
 
 * Sensible, well-posed questions
-    * if you want to know if a variable is "important", or what model is "best", you need to know what you mean
+    * if you want to know if a variable is "important", or what model is "best", you need to know what you mean by that
 * Knowledge of the system
 * Strong signals will always be detectable; weak signals will never be	
 * Better analyses should be (within limits)
@@ -30,8 +30,10 @@ opts_chunk$set(tidy=FALSE)
 
 ## Philosophies 
 
-* don't look for a single philosophy [@gigerenzer_surrogate_2015]
-* in many cases different philosophies give similar answers; differences should be understandable
+* don't look for a single philosophy  
+[@gigerenzer_surrogate_2015]
+* in many cases different philosophies give similar answers;  
+differences should be understandable (e.g. @ludwig_uncertainty_1996)
 
 **Frequentist**
 
@@ -42,10 +44,18 @@ opts_chunk$set(tidy=FALSE)
 * objective (?)
 
 **Bayesian**
-    
+
+* basic idea:
+     * it's easy to compute the probability of the *data* happening given the model (parameters etc.): *likelihood*
+	 * if we want to compute the probability of a *model* (parameters), we need to use **Bayes' Rule**
+	 * ... this in turn means we need to specify *prior probabilities*  
+i.e., what did we think before we saw the data?
+     * often bend over backwards to use *weak* or *uninformative* priors
+* for strong data, simple cases, get nearly identical answers to freq.
 * easier to incorporate prior knowledge [@mccarthy_bayesian_2007]
 * easier to incorporate uncertainty [@ludwig_uncertainty_1996]
 * easy=easy; medium=hard; hard=possible 
+* have to specify priors
 * convenience/pragmatic/computational Bayesians: cf. Lele et al
 * more natural statement of confidence ...
 * **but** ... 'calibrated Bayesianism' (Gelman, de Valpine)
@@ -55,6 +65,8 @@ opts_chunk$set(tidy=FALSE)
 
 **permutation testing**
 
+* similar to rank-based non-parametrics  
+(Mann-Whitney, Wilcoxon, Spearman correlations ...)  
 * robust
 * only gives $p$-values (usually)
 * e.g. current *phylogenetic overdispersion* methods [@cavender-bares_merging_2009]
@@ -68,7 +80,7 @@ opts_chunk$set(tidy=FALSE)
 * information-theoretic approaches loosely fall in this category   
 (fitting is based on frequentist tools, inference is prediction-based)
 
-## Last thoughts
+## Last thoughts on philosophy
 
 * most of the statisticians I respect are agnostic about philosophies (e.g. Andrew Gelman: 
 
@@ -79,5 +91,27 @@ opts_chunk$set(tidy=FALSE)
 
 > Perhaps the average user of significance tests, without knowing it, smears him- or herself over the three major statistical schools [Fisherian frequentist, Neyman-Pearson frequentist, Bayesian], and disobeys the rules of each ...
 	 
+## More on practice
+
+* People (including scientists) are lazy (or think they have more
+important things to do) and prefer simple rules.
+* *Some* rules of thumb for filtering noise are 
+helpful ($p=0.05$ is more or less a historical accident
+[@dallal_whypvals]: Fisher: ``in fact no scientific worker has a fixed level of
+significance at which from year to year, and in all circumstances, he
+rejects hypotheses; he rather gives his mind to each particular case
+in the light of his evidence and his ideas.''
+* Listening to music makes you younger: [@simmons_false-positive_2011]
+*  Graphical evidence for $p$-value abuse:
+
+![](pix/Blog_Gerber_Pub_Bias.png) 
+
+[@gerber_publication_2008; @drum_washington_2006]
+
+* Need to decide in advance if you are trying to *confirm (test) hypothesis*, *predict* future outcomes or *explore* the data looking for interesting patterns:  
+different rules/procedures in each case!
+
+
+
 
 ## References
