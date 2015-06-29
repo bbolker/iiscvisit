@@ -6,64 +6,92 @@ output: rmarkdown::tufte_handout
 bibliography: "../iisc.bib"
 ---
 
-# Location models: fitting functional responses
+```{r opts,echo=FALSE}
+library("knitr")
+opts_chunk$set(fig.width=5,fig.height=4,tidy=FALSE)
+```
+
+# Preliminaries
+
+Loading packages:
 
 ```{r pkgs,message=FALSE,warning=FALSE}
 library("emdbook")  ## for reedfrog data
 library("aods3")    ## for overdispersion tests
-library("bbmle")
+library("bbmle")    ## for GNLMs and AICtab
 library("mgcv")     ## for GAMs
-library("pscl")
+library("pscl")     ## for zero-inflated models
+library("MASS")     ## for glm.nb; built in
 ```
 
+`glmmADMB` is not on CRAN:
+```{r pkg2,message=FALSE}
+if (!require("glmmADMB")) {
+    install.packages("R2admb") ## install dependency first
+    install.packages("glmmADMB",
+                     repos="http://www.math.mcmaster.ca/bolker/R",
+                     type="source")
+    }
+```
+
+# Location models: fitting functional responses
+
+Functional responses are a particularly simple example of nonlinear
+curves.  Since functional response experiments usually measure the
+number of prey killed out of a starting total, they are naturally
+modeled as binomial.  I'm going to use James Vonesh's data set 
+on *Hyperolius spinigularis*, which is included with the `emdbook`
+package:
+
 ```{r start}
-par(mfrow=c(1,2))
 par(las=1,bty="l")  ## cosmetic
 plot(Killed~Initial,data=ReedfrogFuncresp,
-     cex=sqrt(Initial*0.05))
-## shorter/easier to type, and proportion will be handy
+     cex=sqrt(Initial*0.05)) ## make point area proportional to N
+## 'Rfd' is shorter/easier to type, and proportion variable will be handy
 Rfd <- transform(ReedfrogFuncresp,
                  prop=Killed/Initial)
+## or Rfd <- ReedfrogFuncresp; Rfd$prop <- Rfd$Killed/Rfd$Initial
 ```
 
 * Fit a linear model:
 ```{r results="hide"}
 summary(lm(Killed~Initial,data=Rfd))
 ```
-Inspect the summary.  Use `abline()` to add the regression line to the plot above.  What do the coefficients, $p$-value, etc., mean?  What do you think you could take away from this analysis?
+*Inspect the summary.  Use `abline()` to add the regression line to the plot above.  What do the coefficients, $p$-value, etc., mean?  What do you think you could take away from this analysis?*
+
 * Fit a naive GLM:
 ```{r results="hide"}
 glm1 <- glm(prop~Initial,weights=Initial,data=Rfd,family=binomial)
+## I recommend prop~. + weights syntax for binomial GLMs instead of
+## cbind(Killed,Initial-Killed) ~ ...
 summary(glm1)
 ```
-What do the parameters and p-values of this model mean?
-Check overdispersion with `gof()` and adjust accordingly
-(I would recommend `family=quasibinomial` as the simplest solution in this case; note that the parameter estimates will not change.)
-
+*What do the parameters and p-values of this model mean?
+Check overdispersion by computing `deviance(.)/df.residual(.)`, or with `gof()` (`aods3` package) and adjust accordingly
+(I would recommend `family=quasibinomial` as the simplest solution in this case; note that the parameter estimates will not change.)  Compare the results.*
+```{r gof,echo=FALSE,results="hide"}
+deviance(glm1)/df.residual(glm1)
+gof(glm1)
+```
 Construct a new data frame with evenly spaced initial numbers for
 prediction purposes:
 ```{r pframe}
 pframe <- data.frame(Initial=min(Rfd$Initial):max(Rfd$Initial))
 ```
-Now use `predict()` to get the predicted values for these initial
+*Now use `predict()` to get the predicted values for these initial
 densities (don't forget to use `type="response"` to get probabilities
 rather than log-odds values).  Plot the *proportions* (not numbers) killed
 (response) vs `Initial` (predictor) 
-and use `lines()` to superimpose your predictions on the plot.
+and use `lines()` to superimpose your predictions on the plot.*
 
-```{r echo=FALSE,fig.keep="none"}
+```{r plot_hidden,echo=FALSE,fig.keep="none"}
 ## predict
 pframe$prop <- predict(glm1,newdata=pframe,type="response")
 ## re-plot and superimpose predictions
 plot(prop~Initial,data=Rfd,cex=sqrt(Initial*0.05),ylim=c(0,1))
 with(pframe,lines(Initial,prop))
-## redo with wider range ...
-pframe2 <- data.frame(Initial=min(Rfd$Initial):1000)
-pframe2$prop <- predict(glm1,newdata=pframe2,type="response")
-plot(prop~Initial,data=Rfd,cex=sqrt(Initial*0.05),xlim=c(0,1000),
-     ylim=c(0,1))
-with(pframe2,lines(Initial,prop,col=2))
 ```
+
 You may be surprised at the linearity of the predicted curve.
 What happened?  Did we mess something up?
 If you don't understand right away and want to
@@ -71,6 +99,15 @@ gain more insight, or if you think you understand and want to
 check yourself, try redoing the predictions with a wider range
 of initial densities (up to 1000) and re-do the plot with wider limits 
 (`xlim=c(1,1000)`, `ylim=c(0,0.7)`) ...
+
+```{r plot_hidden2,echo=FALSE,fig.keep="none"}
+## redo with wider range ...
+pframe2 <- data.frame(Initial=min(Rfd$Initial):1000)
+pframe2$prop <- predict(glm1,newdata=pframe2,type="response")
+plot(prop~Initial,data=Rfd,cex=sqrt(Initial*0.05),xlim=c(0,1000),
+     ylim=c(0,1))
+with(pframe2,lines(Initial,prop,col=2))
+```
 
 If you already know how to use `ggplot`, you can try plotting the data
 and adding
@@ -80,6 +117,8 @@ geom_smooth(method="glm",family="quasibinomial",
     expand_limits(x=0,y=1000)
 ```
 to replicate the plot we've just done.
+(If you don't use `ggplot`, this will seem completely mysterious. Sorry.
+Try not to let it bother you.)
 
 ```{r ggplot,echo=FALSE,fig.keep="none",message=FALSE}
 library("ggplot2"); theme_set(theme_bw())
@@ -89,8 +128,8 @@ ggplot(Rfd,aes(Initial,prop))+geom_point(alpha=0.5,aes(size=Initial))+
                     aes(weight=Initial),fullrange=TRUE)+
             expand_limits(y=0,x=1000)
 ```
-* Now let's try fitting a nonlinear model.  The model that goes
-along with a Holling type II model is 
+* Now let's try fitting a nonlinear model.  The underlying model of
+a Holling type II functional response model is 
 $$
 \begin{split}
 K & \sim \text{Binom}(p_d,N) \\
@@ -104,8 +143,9 @@ epidemic), $p_d$ is the *per capita* probability of predation
 In order to have a chance of getting this to work we
 also have to have reasonable guesses for the initial 
 parameters.  If we do the algebra
-we can work out that the asymptote of the $K$ vs $I$ graph is 
-$1/h$ and the initial slope is $a$. Eyeballing the graph,
+we can work out that the asymptote of the killed ($K$) vs initial ($N$) graph is 
+$1/h$ and the initial slope is $a$. (*If you're not frightened
+of algebra, stop and work this out yourself.*) Eyeballing the graph,
 it seems as though the asymptote might be around 50 and the
 initial slope might be around 1/4 ...
 ```{r mle1,warning=FALSE}
@@ -123,6 +163,7 @@ Compute the predicted probabilities (by hand
 or using `predict()`) and overlay them on the previous
 graphs.  How big a difference does it make?
 * Now we'll try to fit the same model with an inverse-link GLM.
+
 $$
 \begin{split}
 K & \sim \textrm{Binom}\left(\frac{1}{b_0+b_1 N}, N \right) \\
@@ -131,7 +172,7 @@ K & \sim \textrm{Binom}\left(\frac{1}{b_0+b_1 N}, N \right) \\
 $$
 So this is equivalent to the previous model with $a=1/b_0$, $ah=b_1/b_0$
 ($b_1=ahb_0=h$, $b_1=1/a$).
-```{r}
+```{r glm_inv}
 glm_inv <- glm(prop~Initial,
     weights=Initial,
     family=quasibinomial(link="inverse"),
@@ -148,67 +189,159 @@ ggplot(Rfd,aes(Initial,prop))+geom_point(alpha=0.5,aes(size=Initial))+
         geom_smooth(method="glm",family=binomial(link="inverse"),
                     aes(weight=Initial),fullrange=TRUE,colour="red")+
             geom_smooth(method="gam",family=binomial,
-                        aes(weight=Initial),fullrange=TRUE,colour="purple")
+                        aes(weight=Initial),fullrange=TRUE,colour="purple")+
             expand_limits(y=0,x=1000)
 ```
 * We could also fit a GAM: 
 ```{r gam}
-gam1 <- gam(Killed~s(Initial),family=quasibinomial,data=Rfd)
+gam1 <- gam(prop~s(Initial,k=8),
+            weights=Initial,
+            family=quasibinomial,data=Rfd)
 ```
-(or using `quasibinomial(link="inverse")`).  You will probably
-find that the model collapses back down to a linear model,
-which is a nice feature of penalized GAMs. It's worth noting that since
-we only have 6 different initial-density values, it's not worth
+Normally we can get away with just `prop~s(Initial)` (which means
+"`prop` is a smooth function of `Initial`"), but here since we have
+so few distinct data points we have to hint to R how many
+maximum points to use (`k=8`): see `help("choose.k",package="mgcv")`
+for more information.
+We could also have used `quasibinomial(link="inverse")`). 
+The model collapses back down to something not very
+different from a linear model,
+which is a nice feature of penalized GAMs. 
+Since we only have 6 different initial-density values, it's not worth
 trying to get *too* clever about our model!
+
 * Rogers random-predator model: see Bolker 2008, `?lambertW`
 in the `emdbook` package.  How much difference does it make?
 How do the interpretations of the parameters change?
 
 # Zero-inflated models
 
-Data from @roulin_nestling_2007.  There are in fact multiple
+Data from @roulin_nestling_2007 on owlet begging behaviour
+(our main observation will be on how many "sibling negotiation"
+events there were -- number of calls recorded within 15 minutes
+of parental arrival on the nest).  There are in fact multiple
 observations per nest (meaning that we ought to be using a
-zero-inflated GLMM), but we're going to ignore that for the
-moment.
+zero-inflated GLMM), but we're going to ignore that for now.
 
-```{r}
+```{r owls1}
 owls <- read.table("data/Owls.txt",header=TRUE)
-plot(NegPerChick~ArrivalTime,data=owls)
+par(las=1,bty="l") ## cosmetic
+plot(NegPerChick~ArrivalTime,col=FoodTreatment,data=owls)
+legend("topright",pch=1,col=1:2,c("Deprived","Satiated"))
 ```
 
-How big a model can we afford to fit?  We have `r nrow(owls)` observations,
-so at least at first glance that means we can fit
-```{r psclfit}
-zi1 <- zeroinfl(SiblingNegotiation~ArrivalTime*SexParent*FoodTreatment+
-                    offset(log(BroodSize)),data=owls)
-zi2 <- update(zi1,dist="negbin")
-AICtab(zi1,zi2)
-## questionable but ...
-zi2 <- update(zi1,.~.-ArrivalTime:SexParent:FoodTreatment-
-                  SexParent:FoodTreatment-ArrivalTime:SexParent)
+We also have information on brood size and parental sex,
+but we'll save this for when we're looking at data visualization ...
+
+Start by fitting a negative binomial model for the ratio of
+negotiation to brood size by adding an offset of `log(BroodSize)`.
+We'll use arrival time, food treatment, and their interaction
+as predictors.
+```{r owls2}
+glmnbfit <- glm.nb(SiblingNegotiation~ArrivalTime*FoodTreatment+
+                   offset(log(BroodSize)),
+               ## don't specify family (NB2 is assumed)
+               data=owls)
 ```
+
+Now we want to try fitting a zero-inflated model.  In general,
+`pscl` models use a two-part model with the model for the 'conditional'
+part (i.e., the distribution of the values that are *not*
+sampling zeros) on the left side of the bar and the model for
+structural zeros or not on the right side of the bar. The first
+model we will fit uses the same model as before (arrival time,
+food treatment, and an offset for brood size) for the conditional
+distribution and an intercept-only model (`1`) for the structural
+zeros.  In other words, we are going to assume there is a single
+rate of zero-inflation that applies to all observations regardless
+of arrival time or food treatment.
 
 ```{r}
-for 
-
-```{r ziplot}
-ff <- fitted(zi2)
-rr <- residuals(zi2,type="pearson")
-par(las=1,bty="l")
-tmpplot <- function(x,y) {
-    plot(x,y,type="n")
-    panel.smooth(x,y)
-}
-tmpplot(ff,rr,xlab="fitted",y="residual")
-tmpplot(ff,sqrt(abs(rr)))
+ff <- SiblingNegotiation~ArrivalTime*FoodTreatment+offset(log(BroodSize))|1
+glmzinbfit <- zeroinfl(ff,
+                data=owls,
+                dist="negbin")
 ```
 
-First make sure `coda` is already installed, then:
-```{r coefplot2_installed,eval=FALSE}
-install.packages("coefplot2",repos="http://www.math.mcmaster.ca/bolker/R",
-                 type="source")
+A quick AIC check:
+```{r aic1}
+AICtab(glmnbfit,glmzinbfit)
 ```
-                 
-* scale data
-* coef plots?
-* broom?
+This is a **huge** difference.
+*Compare the coefficients. What difference has 
+zero-inflation made to the conclusions (use `summary()` to
+see $p$-values, etc.).  Use `plogis()` (a handy
+version of the logistic function $1/(1+\exp(-x))$) to
+find the zero-inflation probability, which is stated
+on the logit scale.*
+```{r comp}
+cbind(NB=c(coef(glmnbfit),NA),
+      ZINB=coef(glmzinbfit))
+```
+
+There's a lot more to do here.
+
+* Some preliminary investigation suggests that there might be
+some issues about the way we handle overdispersion.  Our choices
+are (1) quasi-Poisson; (2) NB1, a negative binomial model with
+the same mean-variance relationship implied by QP; (3) NB2.
+`zeroinfl` doesn't do QP or NB1, but we can use `glmmADMB`
+to fit a zero-inflated model as follows:
+```{r}
+glmzinb1fit <- glmmadmb(SiblingNegotiation~ArrivalTime*FoodTreatment+
+                           offset(log(BroodSize)),
+                       data=owls,family="nbinom1",zeroInflation=TRUE)
+## family="nbinom" or family="nbinom2" gives an NB2 model
+```
+* Try `family="nbinom2` instead, and/or `zeroInflation=FALSE`,
+and use `AICtab` to compare the results.  Compare the NB2 fits
+using `zeroinfl` and `glmmADMB`: are they the same?*
+
+```{r dmodels,echo=FALSE,results="hide"}
+glmqp1 <- glm(SiblingNegotiation~ArrivalTime*FoodTreatment+
+                  offset(log(BroodSize)),
+              family=quasipoisson,
+              data=owls)
+glmzinb2fit <- glmmadmb(SiblingNegotiation~ArrivalTime*FoodTreatment+
+                           offset(log(BroodSize)),
+                       data=owls,family="nbinom2",
+                      zeroInflation=TRUE)
+glmnb2fit <- glmmadmb(SiblingNegotiation~ArrivalTime*FoodTreatment+
+                           offset(log(BroodSize)),
+                       data=owls,family="nbinom2")
+AICtab(glmzinb1fit,glmzinb2fit,glmnb2fit)
+```
+
+* Unfortunately, I don't know of an easy graphical diagnostic
+for zero-inflation.  For models with only categorical predictors, we
+can separate the data by categories (e.g. food treatment) and compare
+the distribution in each category to a Poisson distribution with the
+same mean.  Comparing AICs or computing $p$-values is an OK way to
+test, but (1) it's nice to be able to test the requirement for a more
+complex model without always having to fit it first and then see if
+it was needed; (2) graphical diagnostics often provide insights that
+we miss by just looking at the numbers.
+* A good way to test models is to do *posterior predictive simulation*,
+i.e. generate simulations from the model and see how the distribution
+of some predicted value (in this case the total number of zeros)
+matches the observed value. If it's available for a particular
+model type, the `simulate()` method makes this really easy:
+```{r glmnb1sim}
+par(las=1)
+nbsim <- simulate(glmnbfit,1000)  ## each column is a simulation
+predzeros <- colSums(nbsim==0)
+hist(predzeros,col="gray",xlim=c(80,160),main="",
+     xlab="Number of zeros")
+## superimpose observed value
+abline(v=sum(owls$SiblingNegotiation==0),col=2)
+```
+
+Unfortunately, `pscl` and `glmmADMB` don't have `simulate()` methods ...
+so we would have to do more work to do the equivalent test.
+
+* We could consider more complex zero-inflation models (i.e. putting more predictors on the right side of the bar in the `zeroinfl` model formula, e.g. `~...|ArrivalTime` to allow the amount of zero-inflation to depend on arrival time.
+* For more extended modeling of this data set see the [Owls project](https://groups.nceas.ucsb.edu/non-linear-modeling/projects/owls) from @bolker_strategies_2013.
+
+See also: [UCLA stats ZIP example](http://www.ats.ucla.edu/stat/r/dae/zipoisson.htm])
+
+## References
