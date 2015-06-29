@@ -6,12 +6,13 @@
 
 ## DAY 1: 29th June
 
-* 11am-12:30am: Talk and discussion: "How to think about data analysis". Principles and philosophies of statistical inference: frequentist, information-theoretic, Bayesian. Notes: [pdf](workshops/data_analysis_principle.pdf), [html](workshops/data_analysis_principle.html)
+* 11am-12:30am: Talk and discussion: "How to think about data analysis". Principles and philosophies of statistical inference: frequentist, information-theoretic, Bayesian. Notes: [pdf](workshops/data_analysis_principle.pdf), 
+[html](http://htmlpreview.github.io/?https://github.com/bbolker/iiscvisit/blob/master/workshops/data_analysis_principle.html)
 * 12:30-2pm: Lunch with faculty (Main guest house)
 * 2:30 pm: Workshop: Extensions of GLM (overdispersion, GAM, gnlm) (approx. 35 students) Notes ([pdf](workshops/glm_extensions.pdf),
-[html](workshops/glm_extensions.html),
+[html](http://htmlpreview.github.io/?https://github.com/bbolker/iiscvisit/blob/master/workshops/glm_extensions.html),
 [rmd](workshops/glm_extensions.rmd));
-exercise ([html](workshops/glm_extensions_lab.html),
+exercise ([html](http://htmlpreview.github.io/?https://github.com/bbolker/iiscvisit/blob/master/workshops/glm_extensions_lab.html),
 [rmd](workshops/glm_extensions_lab.rmd));
 
 
