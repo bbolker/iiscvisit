@@ -1,3 +1,14 @@
+
+
+* reproducibility crisis
+* growth of meta-science
+* fighting data rot
+* increased complexity of analyses
+* network/storage availability
+* increased level of collaborative work
+
+* notes from Jenny Bryan? e.g. https://stat545-ubc.github.io/automation00_index.html
+* Github setup; [student discounts](https://education.github.com/) for private repositories
 * steal from FitzJohn talk?
     * [blog post](https://ropensci.org/blog/2014/06/09/reproducibility/)
     * [github](https://github.com/richfitz/reproducibility-2014)

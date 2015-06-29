@@ -702,10 +702,10 @@ if (is.null(zz$rvec)) zz <- data.frame(rvec=seq(0,25,by=0.1),zz)
     \end{itemize}
   \end{frame}
 
-\begin{frame}
-  \includegraphics[width=\textwidth]{pix/purity} \\
-\url{http://xkcd.com/435/}
-  \end{frame}
+%% \begin{frame}
+%%   \includegraphics[width=\textwidth]{pix/purity} \\
+%% \url{http://xkcd.com/435/}
+%%   \end{frame}
 
 % \begin{frame}
 %   \frametitle{Provocation}

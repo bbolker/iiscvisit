@@ -127,7 +127,7 @@ pp(rzinbinom(1000,mu=4,size=5,zprob=0.8),main="ZINB(4,k=5,z=0.8)")
 * zero-*truncation*: no zeros
     * truncated Poisson/binomial
 	* or just assume $X \sim \textrm{Poisson}(\lambda)+1$ (easier)
-* *zero-inflation* (mixture) and *hurdle* models: `pscl` package
+* *zero-inflation* (mixture of *structural* and *sampling* zeros) and *hurdle* models (spike at zero + *truncated* distribution): `pscl` package
 * don't throw out zeros - but remember that a data set with mostly zeros is not very informative!
 * zero-inflated *continuous* data?
     * two-stage (binomial + positive distribution)

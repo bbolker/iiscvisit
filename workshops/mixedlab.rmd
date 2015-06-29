@@ -6,6 +6,7 @@
 library(reshape2)
 library(plyr)
 library(lattice)
+library("knitr")
 opts_chunk$set(fig.align="center",fig.width=5,fig.height=5,tidy=FALSE,message=FALSE)
 opts_knit$set(use.highlight=TRUE)
 knit_hooks$set(basefig=function(before, options, envir) {
@@ -47,7 +48,7 @@ library(ggplot2)
 theme_set(theme_bw())
 library(grid)
 zmargin <- theme(panel.margin=unit(0,"lines")) ## squash panels together
-load("../data/starling.RData") 
+load("data/starling.RData") 
 ggplot(dataf,aes(mnth,stmass))+
   geom_point()+
   geom_line(aes(group=subject))+  ## connect subjects with a line
@@ -267,7 +268,7 @@ jagsmodel <- function() {
   sd.indiv <- pow(tau.indiv,-0.5)
   sd.res <- pow(tau.res,-0.5)
 }
-source("../R/writeModel.R")
+source("R/writeModel.R")
 write.model(jagsmodel,"starling.bug")
 ```
 
@@ -322,7 +323,7 @@ raftery.diag(jagsmm1)
 Generalized linear mixed model: *Culcita* example
 -----------------
 ```{r culcdata}
-culcdat <- read.csv("../data/culcitalogreg.csv",
+culcdat <- read.csv("data/culcitalogreg.csv",
   colClasses=c(rep("factor",2),
     "numeric",
     rep("factor",6)))
