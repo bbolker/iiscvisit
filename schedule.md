@@ -13,13 +13,15 @@
 [html](http://htmlpreview.github.io/?https://github.com/bbolker/iiscvisit/blob/master/workshops/glm_extensions.html),
 [rmd](workshops/glm_extensions.rmd));
 exercise ([html](http://htmlpreview.github.io/?https://github.com/bbolker/iiscvisit/blob/master/workshops/glm_extensions_lab.html),
-[rmd](workshops/glm_extensions_lab.rmd));
-
+[rmd](workshops/glm_extensions_lab.rmd))
 
 ## DAY 2: 30th June
 
 * 11:30pm - 1:30pm: Data lunch 1 (bring your own food)
-* 2:30pm: Workshop on mixed-effects / hierarchical modelling (esp GLMM) (approx. 35 students)
+* 2:30pm: Workshop on mixed-effects / hierarchical modelling (esp GLMM) (approx. 35 students).
+    * notes ([pdf](workshops/glmm_iisc.pdf), [Rnw](workshops/glmm_iisc.Rnw))
+    * exercise ([html](http://htmlpreview.github.io/?https://github.com/bbolker/iiscvisit/blob/master/workshops/mixedlab.html),
+[rmd](workshops/mixedlab.rmd); [starling data](workshops/data/starling.RData))
 
 ## DAY 3: 1st July
 

@@ -682,15 +682,15 @@ curve(1+hh*x^2,add=TRUE,lty=2)
   \end{columns}
 \end{frame}
 
-\begin{frame}
-\frametitle{2D profiles for {\it Culcita} data}
+%% \begin{frame}
+%% \frametitle{2D profiles for {\it Culcita} data}
 <<cprof,cache=TRUE>>=
 cprof <- profile(cmod1)
 @
-<<cprofplot,fig.width=10,fig.height=10>>=
+<<cprofplot,fig.width=10,fig.height=10,fig.keep="none">>=
 splom(cprof,draw.lower=FALSE)
 @
-\end{frame}
+%% \end{frame}
 
 \begin{frame}
   \frametitle{Likelihood ratio tests}
@@ -778,7 +778,9 @@ trellis.par.set(theme=orig) ## restore settings
   distribution (Markov chains have converged etc. etc.)
   we get most of the inferences we want for free
   by summarizing the marginal posteriors
-\item {\it post hoc} Bayesian can work, but mode at zero causes problems
+\item {\it post hoc} Bayesian methods:
+  use deterministic/frequentist methods to find the maximum,
+  then sample around it
 \end{itemize}
 \end{frame}
 
@@ -858,13 +860,14 @@ but new possibilities on the horizon \citep{Rue+2009,rousset_testing_2014};
   \begin{columns}
     \begin{column}{6cm}
       \begin{itemize}
-        \item{URL here}
+        \item \url{http://ms.mcmaster.ca/~bolker/misc/iisc_private/14-Fox-Chap13.pdf}
         \item \url{http://www.math.mcmaster.ca/bolker/R/misc/foxchapter}
         \item \cite{bolker_glmm_2014}
       \end{itemize}
     \end{column}
     \begin{column}{6cm}
-      \includegraphics[width=4cm]{pix/foxbook.png}
+      \includegraphics[width=4cm]{pix/foxbook.png} \\
+      (code ASPROMP8)
     \end{column}
 \end{columns}
   \end{frame}
