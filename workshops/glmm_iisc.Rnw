@@ -789,18 +789,46 @@ trellis.par.set(theme=orig) ## restore settings
 \includegraphics[width=\textwidth]{pix/cmod_plotResults.pdf}
 \end{frame}
 
+\begin{frame}[fragile]
+\frametitle{formula formats}
+\begin{itemize}
+\item \code{fixed}: fixed-effect formula
+\item{\code{random}: random-effect formula
+  (in \code{lme4}, combined with fixed)
+  \begin{itemize}
+  \item generally \code{x|g} (term|grouping variable)
+  \item simplest: \code{1|g}, single intercept term
+  \item nested: \code{1|g1/g2}
+  \item random-slopes: \code{r|g}
+  \item independent terms: \code{(1|g)+(x+0|g)}  or \code{(x||g)}
+  \end{itemize}
+}
+\item \code{lme}: \code{weights}, \code{correlation}
+  for heteroscedasticity and residual correlation
+\item \code{MCMCglmm}: options for variance structure
+\end{itemize}
+\end{frame}
+
 \section{Challenges \& open questions}
 
 \begin{frame}
 \frametitle{On beyond R}
-\begin{itemize}
-\item Julia: MixedModels package
-\item SAS: PROC MIXED, NLMIXED
-\item AS-REML
-\item Stata (GLLAMM, xtmelogit)
-\item AD Model Builder; Template Model Builder
-\item HLM, MLWiN
-\end{itemize}
+  \begin{columns}
+    \begin{column}{6cm}
+      \begin{itemize}
+      \item Julia: MixedModels package
+      \item SAS: PROC MIXED, NLMIXED
+      \item AS-REML
+      \item Stata (GLLAMM, xtmelogit)
+      \item AD Model Builder; Template Model Builder
+      \item HLM, MLWiN
+      \item JAGS, Stan, \href{https://github.com/rmcelreath/rethinking}{rethinking package}
+      \end{itemize}
+    \end{column}
+    \begin{column}{6cm}
+\includegraphics[width=4cm]{pix/300px-On_Beyond_Zebra.jpg}
+    \end{column}
+  \end{columns}
 \end{frame}
 
 \begin{frame}
