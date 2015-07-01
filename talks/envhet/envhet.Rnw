@@ -44,8 +44,8 @@ library("ggplot2"); theme_set(theme_bw())
 \title[Spatial estimation]{Estimating environmental heterogeneity from spatial dynamics data}
 \author[Ben Bolker]{Ben~Bolker, McMaster University \\
   {\tiny Departments of Mathematics \& Statistics and Biology}}
-\institute{XXX}
-\date{YY July 2015}
+\institute{IISC}
+\date{1 July 2015}
 % \pgfdeclareimage[height=0.5cm]{uflogo}{letterhdwm}
 % \logo{\pgfuseimage{uflogo}}
 \AtBeginSubsection[]{
@@ -107,7 +107,7 @@ library("ggplot2"); theme_set(theme_bw())
 \pause
   
 The answer to ``does process $X$ operate in ecological system $Y$''
-is most often ``\colemph{Yes}.''
+is nearly always ``\colemph{Yes}.''
   
 \end{frame}
 
@@ -116,21 +116,116 @@ is most often ``\colemph{Yes}.''
   
   \begin{itemize}
   \item Stochastic spatial point processes: continuous time \& space, point
-    individuals, infinite domains
-  \item Spatial (two-point, truncated) correlation functions
+    individuals
   \item Usually assume isotropy and translational invariance
-  \item Exogenous heterogeneity expressed as correlation function of parameters
+  \item Population structure and environmental heterogeneity 
+    both described by \emph{correlation functions}
   \end{itemize}
 
 \pause
 e.g. \colemph{spatial logistic}: 
-\begin{tabular}{llc}
-  \textbf{Process} & \textbf{Effect} & \textbf{Rate} \\
-  competition & subtract individual at $x$ & $\sum_{x \in \gamma} \sum_{y \in \gamma} a^{-}(y-x)$ \\
-  death & subtract point at $x$ & $\sum_{x \in \gamma} m(x)$ \\
-  birth & add point at $x$ & $\int_{\Omega} \sum_{y \in \gamma} a^{+}(y-x) \, dx$
-\end{tabular}
+\begin{itemize}
+\item constant \emph{per capita} fecundity $f$
+\item dispersal kernel $D(r)$ 
+\item death rate increases with local density: \\
+$\mu = \mu_0 + \alpha \int U(x-y) N(y) \, dy$
+\end{itemize}
 
+\end{frame}
+
+\begin{frame}
+\frametitle{Spatial correlation}
+
+<<rf,message=FALSE,echo=FALSE>>=
+library("RandomFields")
+library("smoothie")
+x = 1:101
+y = 1:101
+
+     
+z_rand = matrix(rnorm(101*101),nrow=101)
+g_short <- RMexp(var=1, scale=6)
+g_long <- RMexp(var=1, scale=20)
+g_neg <- RMbessel(var=1,scale=2,nu=1)
+
+RFoptions(spConform=FALSE)
+z_short = RFsimulate(g_short,x,y)
+z_long =  RFsimulate(g_long,x,y)
+z_neg  =  RFsimulate(g_neg,x,y)
+z_shortsm <- gauss2dsmooth(z_short,lambda=10,nx=10,ny=10)
+
+c_neg = RFcov(g_neg,0:100)
+c_short = RFcov(g_short,0:100)
+c_long = RFcov(g_long,0:100)
+c_rand = c(1,rep(0,100))
+ifun <- function(z,main) {
+  image(z,axes=FALSE,xlab="",ylab="",main=main,
+        useRaster=TRUE,
+        ##col=gray((0:30)/30)
+        col=topo.colors(30)
+  )}
+cfun <- function(z,main) {
+  plot(0:100,z,xlab="Distance",ylab="Correlation",main=main,type="l",
+       lwd=2,axes=FALSE)
+  axis(side=1)
+  axis(side=2,at=c(0,1))
+  abline(h=0,col="gray")
+}
+
+par(mar=c(1,1,3,1),mfrow=c(2,2),mgp=c(1.5,1,0))
+ifun(z_rand,"Random")
+ifun(z_short,"Short-range")
+ifun(z_long,"Long-range")
+ifun(z_neg,"Even")
+@
+\end{frame}
+
+\begin{frame}
+\frametitle{Spatial correlation}
+<<rf2>>=
+par(mar=c(4,4,2,2),mfrow=c(2,2),las=1,bty="l")
+cfun(c_rand,"Random")
+cfun(c_short,"Short-range")
+cfun(c_long,"Long-range")
+cfun(c_neg,"Even")
+@
+\end{frame}
+
+\begin{frame}
+\frametitle{Spatial convolution}
+\begin{columns}
+  \begin{column}{6cm}
+    \begin{itemize}
+    \item distance-dependent spatial interactions \\
+      (dispersal, competition, pollen flow \ldots)
+    \item blurs out landscape according to scale of kernel
+    \item relatively straightforward math
+    \item easily described by \emph{power spectra}: \\
+      transformation of spatial correlation information
+    \end{itemize}
+  \end{column}
+  \begin{column}{6cm}
+<<conv1,fig.width=6,fig.height=6,out.width="6cm">>=
+m <- matrix(0,101,101)
+x <- 0:100
+y <- 0:100
+ctrs <- matrix(c(5,6,27,5,8,54,70,80),ncol=2,byrow=TRUE)
+for (i in 1:nrow(ctrs)) {
+    m[((x[row(m)]-ctrs[i,1])^2+(y[col(m)]-ctrs[i,2])^2)<2] <- 1
+}
+m2 <- matrix(0,101,101)
+for (i in 1:nrow(ctrs)) {
+    d <- sqrt((x[row(m)]-ctrs[i,1])^2+(y[col(m)]-ctrs[i,2])^2)
+    m2 <- m2 + dnorm(d,sd=10)
+}
+par(mar=c(0.5,1,0.5,1),mfcol=c(2,2),mgp=c(1.5,1,0))
+ifun(m,"")
+ifun(m2,"")
+ifun(z_short,"")
+ifun(z_shortsm,"")
+@
+\end{column}
+\end{columns}
 \end{frame}
 
 \section{Endogenous vs exogenous: qualitative}
@@ -178,22 +273,21 @@ e.g. \colemph{spatial logistic}:
 \begin{frame}
   \frametitle{Demographic noise-driven pattern}
   \begin{itemize}
-  \item Correlation equations: Dirac $\delta$ function in 
-    spatial correlation function due to discreteness
-  \item Drives pattern in homogeneous, stable systems (e.g. competition):
-    $C=0$ is not even an equilibrium for the spatial logistic equation
+  \item Demographic stochasticity appears in correlation equations
+  \item Drives pattern in homogeneous, stable systems (e.g. competition)
     \pause
   \item{Effects could be weak: 
       \begin{itemize}
       \item depend on scale of interaction neighborhood
-        \citepx{bol99}: in numbers of individuals: $\approx 10$, 100, 1000 ?
-      \item effects depend on $R=f/\mu$
-        for equal scale of dispersal \& competition, get even pattern
-        if $R>2$ \citepx{bp98}
+        \citepx{bol99}: \\
+        small if effective \# neighbors $>$ 10-20?
+      \item effects depend on $R=f/\mu$: \\
+        for equal scale of dispersal \& competition, \\
+        no clumping if $R>2$ \citepx{bp98}
       \end{itemize}
     }
-  \item Could be stronger with fine-scale heterogeneity (e.g. negative
-    binomial noise?)
+  \item Could be stronger with fine-scale heterogeneity \\
+    (e.g. negative binomial rather than Poisson noise?)
   \end{itemize}
 \end{frame}
 
@@ -220,11 +314,11 @@ e.g. \colemph{spatial logistic}:
   \item Amplitude may scale differently from $\sqrt{N}$ 
   \item{Space-time correlations: 
       \begin{itemize}
-      \item separable \citex{snyder_how_2004} ?
-      \item other correlations can be framed as outcomes of dynamical processes
+      \item separable \citep{snyder_how_2004} ?
+      \item model correlations as their own sub-processes \cite{north_evolutionary_2011}
       \end{itemize}}
   \end{itemize}
-  Properties other than 2-point correlation functions?
+  Descriptions other than correlation functions? \citep{endler_natural_1986}
 \end{frame}
 
 \begin{frame}
@@ -398,29 +492,14 @@ standard deviation of the autocorrelation function
 
 %\begin{center}\includegraphics[height=1in,width=2in]{scalefig}\end{center}
 \end{frame}
-\begin{frame}
-  Simple expressions for $\fourier{S}$ if we choose
-  \begin{itemize}
-  \item $D \propto e^{-\lambda |r|}$ (Laplacian) in 1D
-  \item Bessel ($K_0$) in 2D
-  \end{itemize}
-  So that $\fourier K(\lambda) = \lambda/(\lambda^2+\omega^2)$.
-  
-Then 
-$$
-\fourier{S} = c_1 \fourier{K}(\lambda_e) + 
-c_2 \fourier{K}(\lambda_d \sqrt{r/(r+m)})
-$$
-
-\end{frame}
 \begin{frame} \frametitle{Spectral ratios}
-Alternatively, calculate the \colemph{spectral ratio}: 
+To factor out dispersal, calculate the \colemph{spectral ratio}: 
 $$
 \tilde R = \frac{\fourier{e}}{\tilde S} = \frac{2}{\sigma^2_E}  (r+m(1-\fourier{D}))
 = c_1 - c_2 \fourier{D}
 $$
 
-Re-invert to \colemph{deconvolve} the effects of
+\colemph{Deconvolve} the effects of
 environmental variability from the
 population pattern \ldots
 \end{frame}
@@ -536,7 +615,9 @@ plot.ratio(list(specratio=mothratio),bty="l",neg=TRUE,fmax=0.015,
 %\end{frame}
 
 \begin{frame} \frametitle{(Putative) moth dispersal curve}
-<<mothdisp>>=
+\begin{columns}
+  \begin{column}{0.6\textwidth}
+    <<mothdisp,fig.width=4,fig.height=4.5>>=
 invratio <- function(specratio,lastfrac=0.5) {
   n <- length(specratio$ratio)
   c1 <- mean(specratio$ratio[round((1-lastfrac)*n):n])
@@ -551,6 +632,14 @@ par(lwd=2,bty="l",las=1)
 plot(D$freq,D$spec,lty=1,bty="l",type="l",
      lwd=2,xlab="Distance (km)",ylab="Dispersal")
 @
+\end{column}
+  \begin{column}{0.4\textwidth}
+\begin{itemize}
+  \item Reconstructed moth dispersal kernel $\approx 50 \textrm{km}$
+  \item Consistent with natural history
+\end{itemize}
+\end{column}
+  \end{columns}
 \end{frame}
 
 \subsection{Pines}
@@ -679,28 +768,6 @@ if (is.null(zz$rvec)) zz <- data.frame(rvec=seq(0,25,by=0.1),zz)
 \end{frame}
 
 
-\begin{frame}
-  \frametitle{Meta-issues}
-
-  \begin{itemize}
-    \item{Why do interdisciplinary work?
-      Public vs. private explanations:
-      \begin{itemize}
-      \item for fun
-      \item to find interesting math problems
-      \item to solve biological problems (basic or applied)
-      \item career enhancement (publications, grants, publicity \ldots)
-      \end{itemize}}
-    \item{Interactions of science with mathematics
-        \begin{itemize}
-        \item Physics vs. biology vs. social sciences
-        \item Quantitative or qualitative differences?
-        \item Which differences matter? Scale, noisiness, data quality/quantity,
-          culture (lumpers vs. splitters), \ldots ?
-        \item Are different strategies required?
-        \end{itemize}}
-    \end{itemize}
-  \end{frame}
 
 %% \begin{frame}
 %%   \includegraphics[width=\textwidth]{pix/purity} \\
