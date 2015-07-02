@@ -63,7 +63,7 @@ img {
 <div id="header">
 <h1 class="title">Data analysis practice</h1>
 <h4 class="author"><em>Ben Bolker</em></h4>
-<h4 class="date"><em>23:57 01 July 2015</em></h4>
+<h4 class="date"><em>00:16 02 July 2015</em></h4>
 </div>
 
 
@@ -96,7 +96,14 @@ img {
 <ul>
 <li>missing data (imputation); mechanistic models; observation vs process error; phylogenetic/pedigree structure; zero-inflation; big data; large number of predictors (<span class="math">\(p \gg n\)</span>); compositional data; ordinal data; multivariate/multitype responses; circular data; spatial/temporal corr.; causal networks …</li>
 </ul></li>
+<li>avoiding complexity
+<ul>
+<li>space/time: map/plot/ACF/Moran test of residuals</li>
+<li>mixed models: two-stage models, boxplot/ANOVA of residuals</li>
+<li>predictive simulation (e.g. zero-inflation)</li>
+</ul></li>
 <li>choose how to spend data, human, computational effort</li>
+<li>“as simple as possible but no simpler”: <span class="citation">Murtaugh (2007)</span></li>
 </ul>
 </div>
 <div id="choosing-a-model-a-priori" class="section level2">
@@ -156,12 +163,21 @@ img {
 </ul></li>
 </ul>
 </div>
+<div id="collinearity" class="section level2">
+<h2>collinearity</h2>
+<ul>
+<li>a problem for <em>inference</em>, not (generally) for estimation</li>
+<li>throwing predictors away on the basis of VIFs <span class="citation">(Zuur, Ieno, and Elphick 2009)</span> is <strong>very</strong> dangerous</li>
+<li><span class="citation">Graham (2003)</span> is probably the most sensible discussion</li>
+<li>for prediction: <span class="citation">Dormann et al. (2012)</span></li>
+</ul>
+</div>
 <div id="goodness-of-fit" class="section level2">
 <h2>Goodness of fit</h2>
 <ul>
 <li>maximal model should fit “adequately”</li>
 <li>important but hard</li>
-<li><span class="math">\(R^2\)</span> has many definitions: GLMs (<a href="http://www.ats.ucla.edu/stat/mult_pkg/faq/general/Psuedo_RSquareds.htm">UCLA stats site</a>, nonlinearity, multilevel models <span class="citation">(Nakagawa and Schielzeth 2013)</span></li>
+<li><span class="math">\(R^2\)</span> – many definitions: GLMs (<a href="http://www.ats.ucla.edu/stat/mult_pkg/faq/general/Psuedo_RSquareds.htm">UCLA stats site</a>), nonlinearity, multilevel models <span class="citation">(Nakagawa and Schielzeth 2013)</span></li>
 <li>predictions/prediction CI/visualization</li>
 <li>cross-validation</li>
 </ul>
@@ -188,11 +204,15 @@ img {
 <div class="references">
 <h2>References</h2>
 <p>Cade, Brian S. 2015. “Model Averaging and Muddled Multimodel Inference.” <em>Ecology</em>, March. doi:<a href="http://dx.doi.org/10.1890/14-1639.1">10.1890/14-1639.1</a>.</p>
+<p>Dormann, Carsten F., Jane Elith, Sven Bacher, Carsten Buchmann, Gudrun Carl, Gabriel Carré, Jaime R. García Marquéz, et al. 2012. “Collinearity: A Review of Methods to Deal with It and a Simulation Study Evaluating Their Performance.” <em>Ecography</em>, 27–46. doi:<a href="http://dx.doi.org/10.1111/j.1600-0587.2012.07348.x">10.1111/j.1600-0587.2012.07348.x</a>.</p>
+<p>Graham, Michael H. 2003. “Confronting Multicollinearity in Ecological Multiple Regression.” <em>Ecology</em> 84 (11): 2809–15. doi:<a href="http://dx.doi.org/10.1890/02-3114">10.1890/02-3114</a>.</p>
 <p>Harrell, Frank. 2001. <em>Regression Modeling Strategies</em>. Springer.</p>
 <p>Hastie, Trevor, Robert Tibshirani, and J. H Friedman. 2009. <em>The Elements of Statistical Learning Data Mining, Inference, and Prediction</em>. New York: Springer. <a href="http://public.eblib.com/EBLPublic/PublicView.do?ptiID=437866" class="uri">http://public.eblib.com/EBLPublic/PublicView.do?ptiID=437866</a>.</p>
-<p>Murtaugh, Paul A. 2009. “Performance of Several Variable-Selection Methods Applied to Real Ecological Data.” <em>Ecology Letters</em> 12 (10): 1061–68. doi:<a href="http://dx.doi.org/10.1111/j.1461-0248.2009.01361.x">10.1111/j.1461-0248.2009.01361.x</a>.</p>
+<p>Murtaugh, Paul A. 2007. “Simplicity and Complexity in Ecological Data Analysis.” <em>Ecology</em> 88 (1): 56–62. <a href="http://www.esajournals.org/doi/abs/10.1890/0012-9658%282007%2988%5B56%3ASACIED%5D2.0.CO%3B2">http://www.esajournals.org/doi/abs/10.1890/0012-9658%282007%2988%5B56%3ASACIED%5D2.0.CO%3B2</a>.</p>
+<p>———. 2009. “Performance of Several Variable-Selection Methods Applied to Real Ecological Data.” <em>Ecology Letters</em> 12 (10): 1061–68. doi:<a href="http://dx.doi.org/10.1111/j.1461-0248.2009.01361.x">10.1111/j.1461-0248.2009.01361.x</a>.</p>
 <p>Nakagawa, Shinichi, and Holger Schielzeth. 2013. “A General and Simple Method for Obtaining R2 from Generalized Linear Mixed-Effects Models.” <em>Methods in Ecology and Evolution</em> 4 (2): 133–42. doi:<a href="http://dx.doi.org/10.1111/j.2041-210x.2012.00261.x">10.1111/j.2041-210x.2012.00261.x</a>.</p>
 <p>Schielzeth, Holger. 2010. “Simple Means to Improve the Interpretability of Regression Coefficients.” <em>Methods in Ecology and Evolution</em> 1: 103–13. doi:<a href="http://dx.doi.org/10.1111/j.2041-210X.2010.00012.x">10.1111/j.2041-210X.2010.00012.x</a>.</p>
+<p>Zuur, Alain F., Elena N. Ieno, and Chris S. Elphick. 2009. “A Protocol for Data Exploration to Avoid Common Statistical Problems.” <em>Methods in Ecology and Evolution</em>, November. doi:<a href="http://dx.doi.org/10.1111/j.2041-210X.2009.00001.x">10.1111/j.2041-210X.2009.00001.x</a>.</p>
 </div>
 </div>
 

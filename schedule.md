@@ -31,8 +31,15 @@ exercise ([html](http://htmlpreview.github.io/?https://github.com/bbolker/iiscvi
 ## DAY 4: 2nd July 
 
 * 10am - 12 pm: Best practices in reproducible research (i.e., in reproducible analysis), including version control, and publishing both data and scripts [knitR with Rstudio, etc]. 
+([pdf](workshops/repro_research.pdf),
+[html](http://htmlpreview.github.io/?https://github.com/bbolker/iiscvisit/blob/master/workshops/repro_research.html),
+[rmd](workshops/repro_research.rmd)); [test data](data/cbpp2.csv)
 * 12 - 2:30 pm: Lunch with students. 
 * 2:30pm: A practical guide to decisions in data analysis (eg, what modelling approach to take based on what data are available; whether to use model selection and if so, what sort?, etc)
+([pdf](workshops/data_analysis_practice.pdf),
+[html](http://htmlpreview.github.io/?https://github.com/bbolker/iiscvisit/blob/master/workshops/data_analysis_practice.html),
+[rmd](workshops/data_analysis_practice.rmd))
+
 
 ## DAY 5: 3rd July
 

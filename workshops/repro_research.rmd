@@ -59,11 +59,18 @@ bibliography: "../iisc.bib"
 * process is most important, but tools are important too
 * host/archive data online/centrally
 * private repository while developing, open on publication
-* data formats:
-     * **AVOID EXCEL**: date-
-     * CSV is low-tech but most portable etc.
-     * RData (`rda` or `rds`): fast, compact, flexible, but not human-readable or useful outside the R ecosystem (store as intermediate product)
 * changes to primary data should be versioned and stored
+
+## file formats
+
+* data formats:
+     * **AVOID EXCEL**: date-mangling, binary format, undiff-able
+     * CSV: low-tech but most portable etc. (careful of quotation marks)
+     * RData (`rda` or `rds`): fast, compact, flexible, but not human-readable or useful outside the R ecosystem (store as intermediate product)
+* keep data in human-readable, convenient, *consistent* structure
+     * e.g. consistent date/time formats, coding
+* locales/encodings
+
 
 ## directory structure
 
@@ -194,11 +201,26 @@ or globally via `opts_chunk$set(...)`
 * platforms: Dropbox, Google drive/docs, Github/Bitbucket
 * markup: Word, google doc, PDF/Acrobat, everything else
 
+# Workflow automation
+
+* `make`
+
+```
+demog_mort_glmer.html: demog_mort_glmer.rmd demog_funs.R demog_batch_funs.R demog.mort.18apr.RData demog_mort_glmer_batch.RData make.png geom-linerangeh.R
+	Rscript -e "library('rmarkdown'); render('demog_mort_glmer.rmd')"
+
+demog_mort_glmer_batch.RData: demog_mort_glmer_batch.R demog_batch_funs.R demog.mort.18apr.RData
+	R CMD BATCH --vanilla demog_mort_glmer_batch.R
+```
+
+![](pix/make.png)
+
+* [remake](https://github.com/richfitz/remake)
+
 # Exercises
 
-* set up an Rmd document:
+* set up an `Rmd` document
 
-* Github setup; [student discounts] for private repositories
 
 # Resources
 
