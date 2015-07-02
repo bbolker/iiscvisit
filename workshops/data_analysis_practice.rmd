@@ -1,7 +1,9 @@
 ---
-title: "title"
+title: "Data analysis practice"
 date: "`r format(Sys.time(), '%H:%M %d %B %Y')`"
 author: Ben Bolker
+output: rmarkdown::tufte_handout
+bibliography: "../iisc.bib"
 ---
 
 ```{r opts,message=FALSE,echo=FALSE,warning=FALSE}
@@ -9,31 +11,89 @@ library("knitr")
 opts_chunk$set(tidy=FALSE)
 ```
 
+## Principles
 
 * goals? confirm, predict (decide), explore ...
-* avoid snooping: decide on (at least primary) analyses first
-* think about workflow
+* avoid snooping: decide on (at least primary) analyses first -- self-registration
 * biology first!
-* data set size (number of obs)
-* number of complications
-    * missing data (imputation)
-	* complex patterns
-	* mechanistic models
-	* observation vs process error
-	* phylogenetic/pedigree structure
-	* zero-inflation
-	* big data
-	* large number of predictors
-	* compositional data
-	* ordinal data
-	* multivariate/multitype responses
-	* 
-	
-* model reduction (Harrell)
-* model-informed model reduction
-    * stepwise
-	* minimal adequate model
-	* Bates, Venables examples ...
-* OK for prediction (Murtaugh 2009)
+* workflow:
+     * self-register
+	 * data viz
+	 * fit models/run tests
+	 * diagnostics
+	 * data viz+predictions
 
-* snooping
+## Considerations
+
+* problem size
+    * observations
+	* predictors/parameters
+	* clusters/individuals
+* number of complications
+    * missing data (imputation); mechanistic models; observation vs process error;  phylogenetic/pedigree structure; zero-inflation; big data; large number of predictors ($p \gg n$); compositional data; ordinal data; multivariate/multitype responses; circular data; spatial/temporal corr.; causal networks ...
+* choose how to spend data, human, computational effort	
+
+## Choosing a model (*a priori*)
+
+* @harrell_regression_2001
+* 'spending' parameters on effects
+    * 1 parameter per linear term
+	* $n-1$ parameters per categorical variable
+	* spline terms (flexible)
+	* interactions!
+* confirmatory studies: *one* parameter per 10-20 data points
+* dimension reduction:
+    * *a priori* choice
+    * PCA (possibly by group)
+	* informative Bayesian priors
+	
+## *post hoc* model choice (don't do it!)
+
+* stepwise
+* minimal adequate model
+	* everyone (except Harrell) does it to some extent: Bates, Venables
+* OK for prediction [@murtaugh_performance_2009]
+
+## variable importance
+
+* scaled parameter estimates [@schielzeth_simple_2010]
+* summed AIC weights: problematic! @cade_model_2015:
+
+> The associated sums of AIC model weights recommended to assess relative importance of individual predictors are a measure of relative importance of models, with little information about contributions by individual predictors.
+
+* random forest approaches
+* variance explained (tricky)
+* what does variable importance mean anyway?
+
+## Interactions
+
+* if non-sig: remove? not sure ...
+* if sig: 
+    * interpret main effects **carefully**
+    * subgroup analysis (avoid comparing significance across groups)
+
+## Goodness of fit
+
+* maximal model should fit "adequately"
+* important but hard
+* $R^2$ has many definitions: GLMs ([UCLA stats site](http://www.ats.ucla.edu/stat/mult_pkg/faq/general/Psuedo_RSquareds.htm), nonlinearity, multilevel models [@nakagawa_general_2013]
+* predictions/prediction CI/visualization
+* cross-validation
+
+## Model averaging
+
+* sensible for *prediction*
+* need to average terms (predictions) that are *consistent across models*
+* not for hypothesis testing
+* shrinkage/penalized estimation
+* be careful of collinearity; interactions; nonlinearity
+* consider explicit penalized regression (lasso, ridge regression) `rms` (`ols`, `lrm`), `glmnet` [@hastie_elements_2009]
+
+## Multiple comparisons
+
+* Holm better than Bonferroni (default of `p.adjust`)
+* FDR (Benjamini-Hochberg)
+* all-pairwise-comparisons (`multcomp`): OK, but why bother?
+* possibly needed for a large set of predictors
+
+## References
