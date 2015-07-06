@@ -2,6 +2,7 @@
 title: "AIC and all that"
 date: "`r format(Sys.time(), '%H:%M %d %B %Y')`"
 author: Ben Bolker
+output: rmarkdown::tufte_handout
 bibliography: "../iisc.bib"
 ---
 
@@ -10,37 +11,46 @@ library("knitr")
 opts_chunk$set(tidy=FALSE)
 ```
 
-## Definition
+## Background
 
-### Goals
+* novel approach to *model selection*
+* $\underbrace{-2L}_{\textrm{badness of fit}}+{2k}_{\textrm{complexity penalty}}$
+* minimize expected difference
+* typical method: fit all (?) possible models ("dredge")
+* select best model ![](pix/skullcross_tiny.png)
+* compute *AIC weights*
+* multi-model averaging
 
-* test hypotheses
-* identify 'important' variables
-* make predictions
+## Problem
 
-### Advantages
+@mcgill_why_2015, "Why AIC Appeals to Ecologist’s Lowest Instincts": some goals of statistical ecological modeling are
+
+> ... estimation of parameters, testing of hypotheses, exploration of covariation, prediction into new conditions, selecting among choices (e.g. models)  ...
+
+(*could add "quantifying variable importance"*); 
+
+> With AIC you present that classic table of $\Delta$AIC and weights and voila! You’ve sort of implied doing all five statistical goals at once. 
+
+## Advantages
 
 * simple
 * non-nested (although cf. @ripley_selecting_2004)
 * accounts for model complexity
 
-### AIC goals
+## AIC goals
 
 * AIC is for *prediction*
 
-### Problem statement
-
-> Just to be clear, likelihood also can be used towards all those goals. But they present much more divergent paths. If you’re doing hypothesis testing you’re doing likelihood ratios. If you’re doing estimation you’re maximizing. If you’re doing selection you can’t proceed unless you specify what criteria to use in addition to likelihood. You have to actually slow down and choose what mode of inference you’re doing. And you have to make more choices. With AIC you present that classic table of ΔAIC and weights and voila! You’ve sort of implied doing all five statistical goals at once. [@mcgill_why_2015]
-
-### ICs
+## ICs
 
 * distinction among ICs
-    * AIC, DIC [@spiegelhalter_bayesian_2002; @ohara_focus_2007]: prediction
-	* BIC: identify true model
-	* WAIC?
-	* AICc: finite-sample correction [@richards_testing_2005]
-	* QAIC
-* statistical inconsistency/overfitting argument; *tapering effect sizes* (picture): [blog post](http://emdbolker.wikidot.com/blog:aic-vs-bic)
+    * AIC, DIC [@spiegelhalter_bayesian_2002]: prediction
+	* BIC: identify true model [@yang_can_2005]
+	* AICc: finite-sample correction [@richards_testing_2005; @fletcher_model-averaged_2011]
+	* QAIC: correct for overdispersion (important!)
+	* CAIC (conditional), DIC: predictions at different hierarchical levels [@ohara_focus_2007]
+	
+* statistical inconsistency/overfitting argument; consistency vs efficiency [@yang_can_2005] and *tapering effect sizes*: [blog post](http://emdbolker.wikidot.com/blog:aic-vs-bic)
 ```{r effsize,echo=FALSE,fig.width=10}
 par(mfrow=c(1,2),las=1,bty="l",mgp=c(1,0,0),mar=c(2,2,1,1))
 eff1 <- seq(1,0,length=20)
@@ -50,33 +60,42 @@ plot(eff2,type="h",axes=FALSE,xlab="effect",ylab="log effect size"); box()
 ```
 * asymptotically equivalent to leave-one-out cross-validation
 * still need to respect limits of model complexity [@harrell_regression_2001]
-* multilevel models: what level of focus? how do we count parameters? (CAIC, DIC) [@vaida_conditional_2005; @spiegelhalter_bayesian_2002]
-* model-averaged CIs are a good idea, but may still represent hypothesis testing
+* model-averaged CIs are a good idea, but still represent hypothesis testing
 
-### Model selection
+## Model selection
 
 * OK, but why?
-* $\Delta \textrm{AIC}>2$ criterion is usually silly
+* don't take $\Delta \textrm{AIC}>2$ criterion too seriously
 
-### Multimodel averaging
+## Multimodel averaging
 
 * averaging *predictions* is completely OK
 * parameter averaging [@cade_model_2015]
     * must average *predictions*
 	* parameters in linear models *may* represent predictions
-	* problems with multicollinearity; interaction terms; nonlinear models
+	* problems with multicollinearity; interaction terms [@schielzeth_simple_2010]; nonlinear models
 	* how to average zero values?
-* multimodel averaging shrinkage vs. penalized regression (lasso/glmnet et al.)
+* `MuMIn`, `AICcmodavg` packages
+* multimodel averaging shrinkage vs. penalized regression (Lasso/elastic net/et al.)
 
-### Weights and variable importance
+## Weights and variable importance
 
 * are model weights probabilities? of what?
      * prob. of inclusion in true best model?
 	 * 'savvy priors'
 	 * what would Bayesian probabilities mean?
 
-
-### Alternatives
+## Alternatives
 
 * penalized regression not without challenge either, but much faster
 * expanded models (with shrinkage?), i.e. don't test point hypotheses
+
+## Good practice
+
+* present $\Delta$AIC, not AIC (`bbmle::AICtab`)
+* graphical results: don't just present AIC table
+* don't take discrete hypotheses too seriously
+* be careful
+
+## References
+

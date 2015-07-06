@@ -770,7 +770,7 @@ analysis of childhood malnutrition in Zambia.},
 	url = {http://www.esajournals.org/doi/abs/10.1890/0012-9658%282007%2988%5B56%3ASACIED%5D2.0.CO%3B2},
 	number = {1},
 	journal = {Ecology},
-	author = {Murtaugh, Paul A},
+	author = {Murtaugh, Paul A.},
 	year = {2007},
 	pages = {56--62}
 }
@@ -854,7 +854,7 @@ analysis of childhood malnutrition in Zambia.},
 	journal = {Ecography},
 	author = {Dormann, Carsten F. and Elith, Jane and Bacher, Sven and Buchmann, Carsten and Carl, Gudrun and Carré, Gabriel and Marquéz, Jaime R. García and Gruber, Bernd and Lafourcade, Bruno and Leitão, Pedro J. and Münkemüller, Tamara and {McClean}, Colin and Osborne, Patrick E. and Reineking, Björn and Schröder, Boris and Skidmore, Andrew K. and Zurell, Damaris and Lautenbach, Sven},
 	year = {2012},
-	pages = {no–no},
+	pages = {27-46},
 	file = {Snapshot:/home/bolker/.mozilla/firefox/gf2kp1m5.default/zotero/storage/WIDQWNDX/abstract.html:text/html}
 }
 
@@ -866,7 +866,7 @@ analysis of childhood malnutrition in Zambia.},
 	doi = {10.1111/j.1461-0248.2009.01361.x},
 	number = {10},
 	journal = {Ecology Letters},
-	author = {Murtaugh, Paul A.},
+	author = {Paul A. Murtaugh},
 	month = oct,
 	year = {2009},
 	pages = {1061--1068}
@@ -1518,4 +1518,105 @@ year ={1992}
 	month = feb,
 	year = {2013},
 	pages = {133--142}
+}
+
+
+
+@article{zuur_protocol_2009,
+	title = {A protocol for data exploration to avoid common statistical problems},
+	issn = {2041210X},
+	url = {http://blackwell-synergy.com/doi/abs/10.1111/j.2041-210X.2009.00001.x},
+	doi = {10.1111/j.2041-210X.2009.00001.x},
+	journal = {Methods in Ecology and Evolution},
+	author = {Zuur, Alain F. and Ieno, Elena N. and Elphick, Chris S.},
+	month = nov,
+	year = {2009}
+}
+
+
+@article{dormann_collinearity_2012,
+	title = {Collinearity: a review of methods to deal with it and a simulation study evaluating their performance},
+	copyright = {© 2012 The Authors},
+	issn = {1600-0587},
+	shorttitle = {Collinearity},
+	url = {http://onlinelibrary.wiley.com/doi/10.1111/j.1600-0587.2012.07348.x/abstract},
+	doi = {10.1111/j.1600-0587.2012.07348.x},
+	abstract = {Collinearity refers to the non independence of predictor variables, usually in a regression-type analysis. It is a common feature of any descriptive ecological data set and can be a problem for parameter estimation because it inflates the variance of regression parameters and hence potentially leads to the wrong identification of relevant predictors in a statistical model. Collinearity is a severe problem when a model is trained on data from one region or time, and predicted to another with a different or unknown structure of collinearity. To demonstrate the reach of the problem of collinearity in ecology, we show how relationships among predictors differ between biomes, change over spatial scales and through time. Across disciplines, different approaches to addressing collinearity problems have been developed, ranging from clustering of predictors, threshold-based pre-selection, through latent variable methods, to shrinkage and regularisation. Using simulated data with five predictor-response relationships of increasing complexity and eight levels of collinearity we compared ways to address collinearity with standard multiple regression and machine-learning approaches. We assessed the performance of each approach by testing its impact on prediction to new data. In the extreme, we tested whether the methods were able to identify the true underlying relationship in a training dataset with strong collinearity by evaluating its performance on a test dataset without any collinearity. We found that methods specifically designed for collinearity, such as latent variable methods and tree based models, did not outperform the traditional GLM and threshold-based pre-selection. Our results highlight the value of GLM in combination with penalised methods (particularly ridge) and threshold-based pre-selection when omitted variables are considered in the final interpretation. However, all approaches tested yielded degraded predictions under change in collinearity structure and the ‘folk lore’-thresholds of correlation coefficients between predictor variables of {\textbar}r{\textbar} {\textgreater}0.7 was an appropriate indicator for when collinearity begins to severely distort model estimation and subsequent prediction. The use of ecological understanding of the system in pre-analysis variable selection and the choice of the least sensitive statistical approaches reduce the problems of collinearity, but cannot ultimately solve them.},
+	language = {en},
+	urldate = {2012-09-24},
+	journal = {Ecography},
+	author = {Dormann, Carsten F. and Elith, Jane and Bacher, Sven and Buchmann, Carsten and Carl, Gudrun and Carré, Gabriel and Marquéz, Jaime R. García and Gruber, Bernd and Lafourcade, Bruno and Leitão, Pedro J. and Münkemüller, Tamara and McClean, Colin and Osborne, Patrick E. and Reineking, Björn and Schröder, Boris and Skidmore, Andrew K. and Zurell, Damaris and Lautenbach, Sven},
+	year = {2012},
+	pages = {no--no}
+}
+
+@article{graham_confronting_2003,
+	title = {Confronting multicollinearity in ecological multiple regression},
+	volume = {84},
+	issn = {0012-9658},
+	url = {http://www.esajournals.org/doi/abs/10.1890/02-3114},
+	doi = {10.1890/02-3114},
+	number = {11},
+	journal = {Ecology},
+	author = {Graham, Michael H.},
+	year = {2003},
+	pages = {2809--2815}
+}
+
+
+@article{fletcher_estimating_2012,
+	title = {Estimating overdispersion when fitting a generalized linear model to sparse data},
+	volume = {99},
+	issn = {0006-3444, 1464-3510},
+	url = {http://biomet.oxfordjournals.org/content/99/1/230},
+	doi = {10.1093/biomet/asr083},
+	abstract = {We consider the problem of fitting a generalized linear model to overdispersed data, focussing on a quasilikelihood approach in which the variance is assumed to be proportional to that specified by the model, and the constant of proportionality, ϕ, is used to obtain appropriate standard errors and model comparisons. It is common practice to base an estimate of ϕ on Pearson’s lack-of-fit statistic, with or without Farrington’s modification. We propose a new estimator that has a smaller variance, subject to a condition on the third moment of the response variable. We conjecture that this condition is likely to be achieved for the important special cases of count and binomial data. We illustrate the benefits of the new estimator using simulations for both count and binomial data.},
+	language = {en},
+	number = {1},
+	urldate = {2015-06-25},
+	journal = {Biometrika},
+	author = {Fletcher, D. J.},
+	month = mar,
+	year = {2012},
+	keywords = {Generalized linear model, Lack-of-fit, overdispersion, Pearson’s statistic, Quadratic estimating equation, Sparse data},
+	pages = {230--237},
+	file = {Fletcher_2012_Estimating overdispersion when fitting a generalized linear model to sparse data.pdf:/home/bolker/Desktop/Old Firefox Data/gf2kp1m5.default/zotero_store/storage/B52GUBKA/Fletcher_2012_Estimating overdispersion when fitting a generalized linear model to sparse data.pdf:application/pdf;Snapshot:/home/bolker/Desktop/Old Firefox Data/gf2kp1m5.default/zotero_store/storage/7J5XZHVF/230.html:text/html}
+}
+
+@article{fletcher_model-averaged_2011,
+	title = {Model-averaged confidence intervals for factorial experiments},
+	volume = {55},
+	issn = {01679473},
+	url = {http://linkinghub.elsevier.com/retrieve/pii/S0167947311001800},
+	doi = {10.1016/j.csda.2011.05.014},
+	language = {en},
+	number = {11},
+	urldate = {2015-07-06},
+	journal = {Computational Statistics \& Data Analysis},
+	author = {Fletcher, David and Dillingham, Peter W.},
+	month = nov,
+	year = {2011},
+	pages = {3041--3048},
+	file = {5404daf20cf23d9765a6cc84.pdf:/home/bolker/Desktop/Old Firefox Data/gf2kp1m5.default/zotero_store/storage/2K2GPEDG/5404daf20cf23d9765a6cc84.pdf:application/pdf}
+}
+
+@phdthesis{jiaxu_xeng_model-averaged_2013,
+	address = {Dunedin, New Zealand},
+	type = {Ph.{D}.},
+	title = {Model-{Averaged} {Confidence} {Intervals}},
+	url = {https://ourarchive.otago.ac.nz/handle/10523/3806},
+	school = {University of Otago},
+	author = {{Jiaxu Xeng}},
+	year = {2013}
+}
+
+@phdthesis{daniel_b._turek_frequentist_2013,
+	address = {Dunedin, New Zealand},
+	type = {Ph.{D}.},
+	title = {Frequentist {Model}-{Averaged} {Confidence} {Intervals}},
+	url = {ttp://www.danielturek.com/uploads/3/8/1/7/38178205/turek_phd_thesis_-_model_averaged_confidence_intervals.pdf},
+	school = {University of Otago},
+	author = {{Daniel B. Turek}},
+	month = apr,
+	year = {2013}
 }
