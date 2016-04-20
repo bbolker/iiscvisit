@@ -375,8 +375,7 @@ contrasts(culcdat$ttt) <-
 
 Fit with PQL, Laplace approximation, Gauss-Hermite quadrature:
 ```{r glmmfits,fig.keep="last"}
-library(lme4)
-library(MASS)
+library("MASS")
 culcmod0 <- glmmPQL(predation~ttt,random=~1|block,family=binomial,data=culcdat,
                       verbose=FALSE)
 culcmod1 <- glmer(predation~ttt+(1|block),family=binomial,data=culcdat)
@@ -387,8 +386,8 @@ coefplot2(list(glmmPQL=culcmod0,Laplace=culcmod1,
 
 Try it with `glmmADMB` and `MCMCglmm`:
 ```{r glmmfits2}
-library(MCMCglmm)
-library(glmmADMB)
+library("MCMCglmm")
+library("glmmADMB")
 culcmod3 <- glmmadmb(predation~ttt,random=~1|block,family="binomial",
                      data=culcdat)
 culcdat$nopred <- 1-culcdat$predation
@@ -399,7 +398,6 @@ Check out the results.
 ### analyze starling data with `MCMCglmm`
 
 ```{r mcmcglmm,message=FALSE}
-library(MCMCglmm)
 mcmcglmm1 <- MCMCglmm(stmass~mnth*roostsitu,
          random=~subject,data=dataf,
          verbose=FALSE)
@@ -412,7 +410,7 @@ For MCMC approaches, it is your responsibility to check that the chain(s) are we
 
 Try this:
 ```{r mcmcplot1,fig.keep="none"}
-library(coda)
+library("coda")
 xyplot(as.mcmc(mcmcglmm1$Sol),layout=c(2,4))
 ```
 

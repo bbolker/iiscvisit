@@ -74,6 +74,7 @@ fit with `-1` or use `lsmeans`, `effects`, `rockchalk` packages
 * different mean-variance relationships [@hardin_generalized_2007]
     * NB2: $V = \mu + \mu^2/k$ ($k>0$)
     * NB1: $V = \tau \mu$ ($k>1$)
+	
 ```{r meanvar,echo=FALSE,message=FALSE,fig.width=4,out.width=200,fig.caption=""}
 data("Arabidopsis",package="lme4")
 library("ggplot2"); theme_set(theme_bw())
@@ -98,6 +99,7 @@ ggplot(asum,
                 scale_colour_manual(breaks=1:3,values=c("black","red","purple"))+
                     theme(legend.position="none")
 ```
+
 * observation-level random effects in mixed models (lognormal-Poisson; logit-normal-binomial) (`lme4`)
 * what about *underdispersion*?
     * less common

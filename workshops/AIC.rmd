@@ -14,10 +14,11 @@ opts_chunk$set(tidy=FALSE)
 ## Background
 
 * novel approach to *model selection*
-* $\underbrace{-2L}_{\textrm{badness of fit}}+{2k}_{\textrm{complexity penalty}}$
+* $\underbrace{-2L}_{\textrm{badness of fit}}+\underbrace{2k}_{\textrm{complexity penalty}}$
 * minimize expected difference
+* asymptotically equivalent to *leave-one-out cross-validation*2
 * typical method: fit all (?) possible models ("dredge")
-* select best model ![](pix/skullcross_tiny.png)
+* select best model (?)
 * compute *AIC weights*
 * multi-model averaging
 
@@ -34,21 +35,23 @@ opts_chunk$set(tidy=FALSE)
 ## Advantages
 
 * simple
-* non-nested (although cf. @ripley_selecting_2004)
+* handles non-nested models (but see @ripley_selecting_2004)
 * accounts for model complexity
 
 ## AIC goals
 
 * AIC is for *prediction*
+* is it OK to use it to test hypotheses?
 
 ## ICs
 
 * distinction among ICs
-    * AIC, DIC [@spiegelhalter_bayesian_2002]: prediction
+    * AIC
+	* DIC: [@spiegelhalter_bayesian_2002]: prediction for Bayesian multilevel models
 	* BIC: identify true model [@yang_can_2005]
 	* AICc: finite-sample correction [@richards_testing_2005; @fletcher_model-averaged_2011]
-	* QAIC: correct for overdispersion (important!)
-	* CAIC (conditional), DIC: predictions at different hierarchical levels [@ohara_focus_2007]
+	* QAIC: correct for overdispersion
+	* CAIC (conditional) (also DIC): multilevel predictions [@vaida_conditional_2005; @ohara_focus_2007]
 	
 * statistical inconsistency/overfitting argument; consistency vs efficiency [@yang_can_2005] and *tapering effect sizes*: [blog post](http://emdbolker.wikidot.com/blog:aic-vs-bic)
 ```{r effsize,echo=FALSE,fig.width=10}
@@ -58,7 +61,6 @@ eff2 <- rep(c(0.9,0),each=10)
 plot(eff1,type="h",axes=FALSE,xlab="effect",ylab="log effect size"); box()
 plot(eff2,type="h",axes=FALSE,xlab="effect",ylab="log effect size"); box()
 ```
-* asymptotically equivalent to leave-one-out cross-validation
 * still need to respect limits of model complexity [@harrell_regression_2001]
 * model-averaged CIs are a good idea, but still represent hypothesis testing
 
@@ -92,6 +94,7 @@ plot(eff2,type="h",axes=FALSE,xlab="effect",ylab="log effect size"); box()
 
 ## Good practice
 
+* consider adequacy
 * present $\Delta$AIC, not AIC (`bbmle::AICtab`)
 * graphical results: don't just present AIC table
 * don't take discrete hypotheses too seriously

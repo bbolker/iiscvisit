@@ -2169,6 +2169,7 @@ text(vvals+c(3,0),rep(u2,2),pos=c(2,4),
 
 \begin{center}  
 \includegraphics[width=2.5in]{pix/Shirreff.png}
+\citep{shirreff_transmission_2011,herbeck_hiv_2014}
 \end{center}
 \end{frame}
 

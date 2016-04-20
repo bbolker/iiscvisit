@@ -2,6 +2,10 @@
 
 ### Env het (day 3)
 
+* correlation pictures
+* convolution pictures?
+* more trimming??
+
 ### Evo vir (day 5)
 
 * uploaded, probably needs lots of polishing
@@ -21,7 +25,6 @@
 
 * coloured hyperlinks in Tufte-handout docs?
 
-
 ### Thinking about data analysis (day 1)
 
 * done
@@ -39,7 +42,7 @@
 * talk:
    * add links to Fox book (post chapter)
 * lab:
-   * updated version of Banta
+   * updated version of Banta?? starlings?
 
 ### Repro research (day 4)
 
